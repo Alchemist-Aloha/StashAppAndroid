@@ -44,7 +44,11 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -112,6 +116,7 @@ import com.github.damontecres.stashapp.ui.components.image.DRAG_THROTTLE_DELAY
 import com.github.damontecres.stashapp.ui.components.image.ImageFilterDialog
 import com.github.damontecres.stashapp.ui.indexOfFirstOrNull
 import com.github.damontecres.stashapp.ui.pages.SearchForDialog
+import com.github.damontecres.stashapp.ui.util.ifElse
 import com.github.damontecres.stashapp.ui.tryRequestFocus
 import com.github.damontecres.stashapp.util.ComposePager
 import com.github.damontecres.stashapp.util.LoggingCoroutineExceptionHandler
@@ -782,17 +787,46 @@ fun PlaybackPageContent(
             player = player,
             surfaceType = SURFACE_TYPE_SURFACE_VIEW,
             modifier =
-                scaledModifier.clickable(
-                    enabled = !isTvDevice,
-                    indication = null,
-                    interactionSource = null,
-                ) {
-                    if (controllerViewState.controlsVisible) {
-                        controllerViewState.hideControls()
-                    } else {
-                        controllerViewState.showControls()
-                    }
-                },
+                scaledModifier
+                    .ifElse(
+                        !isTvDevice,
+                        Modifier
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = {
+                                        if (controllerViewState.controlsVisible) {
+                                            controllerViewState.hideControls()
+                                        } else {
+                                            controllerViewState.showControls()
+                                        }
+                                    },
+                                    onDoubleTap = { offset ->
+                                        if (offset.x < size.width / 2) {
+                                            player.seekBack()
+                                            updateSkipIndicator(-player.seekBackIncrement)
+                                        } else {
+                                            player.seekForward()
+                                            updateSkipIndicator(player.seekForwardIncrement)
+                                        }
+                                    },
+                                )
+                            }.pointerInput(Unit) {
+                                detectHorizontalDragGestures(
+                                    onHorizontalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        val seekDuration = 60_000L // 60 seconds for full width drag
+                                        val seekDelta = (dragAmount / size.width * seekDuration).toLong()
+                                        player.seekTo(player.currentPosition + seekDelta)
+                                        updateSkipIndicator(seekDelta)
+                                    },
+                                )
+                            },
+                        Modifier.clickable(
+                            enabled = false,
+                            indication = null,
+                            interactionSource = null,
+                        ) {},
+                    ),
         )
         if (presentationState.coverSurface) {
             Box(

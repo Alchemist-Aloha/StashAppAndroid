@@ -172,44 +172,139 @@ fun PlaybackControls(
                     .padding(vertical = 8.dp)
                     .fillMaxWidth(.95f),
         )
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier
-                    .padding(horizontal = 8.dp)
-                    .fillMaxWidth(),
-        ) {
-            LeftPlaybackButtons(
-                onControllerInteraction = onControllerInteraction,
-                onPlaybackActionClick = onPlaybackActionClick,
-                showDebugInfo = showDebugInfo,
-                oCount = oCounter,
-                moreButtonOptions = moreButtonOptions,
-                sfwMode = sfwMode,
-                modifier = Modifier,
-            )
-            PlaybackButtons(
-                player = playerControls,
-                initialFocusRequester = initialFocusRequester,
-                onControllerInteraction = onControllerInteraction,
-                showPlay = showPlay,
-                previousEnabled = previousEnabled,
-                nextEnabled = nextEnabled,
-                modifier = Modifier,
-            )
-            RightPlaybackButtons(
-                modifier = Modifier,
-                captions = captions,
-                onControllerInteraction = onControllerInteraction,
-                onControllerInteractionForDialog = onControllerInteractionForDialog,
-                onPlaybackActionClick = onPlaybackActionClick,
-                subtitleIndex = subtitleIndex,
-                audioOptions = audioOptions,
-                audioIndex = audioIndex,
-                playbackSpeed = playbackSpeed,
-                scale = scale,
-            )
+        if (isTvDevice) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .padding(horizontal = 8.dp)
+                        .fillMaxWidth(),
+            ) {
+                LeftPlaybackButtons(
+                    onControllerInteraction = onControllerInteraction,
+                    onPlaybackActionClick = onPlaybackActionClick,
+                    showDebugInfo = showDebugInfo,
+                    oCount = oCounter,
+                    moreButtonOptions = moreButtonOptions,
+                    sfwMode = sfwMode,
+                    modifier = Modifier,
+                )
+                PlaybackButtons(
+                    player = playerControls,
+                    initialFocusRequester = initialFocusRequester,
+                    onControllerInteraction = onControllerInteraction,
+                    showPlay = showPlay,
+                    previousEnabled = previousEnabled,
+                    nextEnabled = nextEnabled,
+                    modifier = Modifier,
+                )
+                RightPlaybackButtons(
+                    modifier = Modifier,
+                    captions = captions,
+                    onControllerInteraction = onControllerInteraction,
+                    onControllerInteractionForDialog = onControllerInteractionForDialog,
+                    onPlaybackActionClick = onPlaybackActionClick,
+                    subtitleIndex = subtitleIndex,
+                    audioOptions = audioOptions,
+                    audioIndex = audioIndex,
+                    playbackSpeed = playbackSpeed,
+                    scale = scale,
+                )
+            }
+        } else {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                // Row 1: Previous, Play/Pause, Next
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PlaybackButton(
+                        iconRes = R.drawable.baseline_skip_previous_24,
+                        onClick = {
+                            onControllerInteraction.invoke()
+                            playerControls.seekToPrevious()
+                        },
+                        enabled = previousEnabled,
+                        onControllerInteraction = onControllerInteraction,
+                    )
+                    PlaybackButton(
+                        modifier = Modifier.focusRequester(initialFocusRequester),
+                        iconRes = if (showPlay) R.drawable.baseline_play_arrow_24 else R.drawable.baseline_pause_24,
+                        onClick = {
+                            onControllerInteraction.invoke()
+                            playerControls.playOrPause()
+                        },
+                        onControllerInteraction = onControllerInteraction,
+                        size = 64.dp,
+                    )
+                    PlaybackButton(
+                        iconRes = R.drawable.baseline_skip_next_24,
+                        onClick = {
+                            onControllerInteraction.invoke()
+                            playerControls.seekToNext()
+                        },
+                        enabled = nextEnabled,
+                        onControllerInteraction = onControllerInteraction,
+                    )
+                }
+                // Row 2: All other buttons (smaller)
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        PlaybackButton(
+                            iconRes = R.drawable.baseline_fast_rewind_24,
+                            onClick = {
+                                onControllerInteraction.invoke()
+                                playerControls.seekBack()
+                            },
+                            onControllerInteraction = onControllerInteraction,
+                            size = 40.dp,
+                        )
+                        PlaybackButton(
+                            iconRes = R.drawable.baseline_fast_forward_24,
+                            onClick = {
+                                onControllerInteraction.invoke()
+                                playerControls.seekForward()
+                            },
+                            onControllerInteraction = onControllerInteraction,
+                            size = 40.dp,
+                        )
+                    }
+
+                    LeftPlaybackButtons(
+                        onControllerInteraction = onControllerInteraction,
+                        onPlaybackActionClick = onPlaybackActionClick,
+                        showDebugInfo = showDebugInfo,
+                        oCount = oCounter,
+                        moreButtonOptions = moreButtonOptions,
+                        sfwMode = sfwMode,
+                        modifier = Modifier,
+                        buttonSize = 40.dp,
+                    )
+
+                    RightPlaybackButtons(
+                        modifier = Modifier,
+                        captions = captions,
+                        onControllerInteraction = onControllerInteraction,
+                        onControllerInteractionForDialog = onControllerInteractionForDialog,
+                        onPlaybackActionClick = onPlaybackActionClick,
+                        subtitleIndex = subtitleIndex,
+                        audioOptions = audioOptions,
+                        audioIndex = audioIndex,
+                        playbackSpeed = playbackSpeed,
+                        scale = scale,
+                        buttonSize = 40.dp,
+                    )
+                }
+            }
         }
     }
 }
@@ -313,11 +408,13 @@ fun LeftPlaybackButtons(
     oCount: Int,
     moreButtonOptions: MoreButtonOptions,
     modifier: Modifier = Modifier,
+    buttonSize: androidx.compose.ui.unit.Dp = 56.dp,
 ) {
     var showMoreOptions by remember { mutableStateOf(false) }
     Row(
         modifier = modifier.focusGroup(),
         horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // More options
         PlaybackButton(
@@ -328,6 +425,7 @@ fun LeftPlaybackButtons(
             },
             enabled = true,
             onControllerInteraction = onControllerInteraction,
+            size = buttonSize,
         )
         // OCount
         Row(
@@ -342,11 +440,12 @@ fun LeftPlaybackButtons(
                 },
                 enabled = true,
                 onControllerInteraction = onControllerInteraction,
+                size = buttonSize,
             )
             Text(
                 text = oCount.toString(),
                 color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp,
+                fontSize = if (buttonSize < 50.dp) 12.sp else 16.sp,
             )
         }
     }
@@ -383,6 +482,7 @@ fun RightPlaybackButtons(
     playbackSpeed: Float,
     scale: ContentScale,
     modifier: Modifier = Modifier,
+    buttonSize: androidx.compose.ui.unit.Dp = 56.dp,
 ) {
     var showCaptionDialog by remember { mutableStateOf(false) }
     var showOptionsDialog by remember { mutableStateOf(false) }
@@ -392,6 +492,7 @@ fun RightPlaybackButtons(
     Row(
         modifier = modifier.focusGroup(),
         horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // Captions
         PlaybackButton(
@@ -402,6 +503,7 @@ fun RightPlaybackButtons(
                 showCaptionDialog = true
             },
             onControllerInteraction = onControllerInteraction,
+            size = buttonSize,
         )
         // Playback speed, etc
         PlaybackButton(
@@ -412,6 +514,7 @@ fun RightPlaybackButtons(
             },
             enabled = true,
             onControllerInteraction = onControllerInteraction,
+            size = buttonSize,
         )
     }
     if (showCaptionDialog) {
@@ -562,6 +665,7 @@ fun PlaybackButton(
     onControllerInteraction: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    size: androidx.compose.ui.unit.Dp = 56.dp,
 ) {
     val selectedColor = MaterialTheme.colorScheme.border
     Button(
@@ -573,11 +677,11 @@ fun PlaybackButton(
                 containerColor = AppColors.TransparentBlack25,
                 focusedContainerColor = selectedColor,
             ),
-        contentPadding = PaddingValues(8.dp),
+        contentPadding = PaddingValues(if (size < 50.dp) 4.dp else 8.dp),
         modifier =
             modifier
-                .padding(8.dp)
-                .size(56.dp, 56.dp)
+                .padding(if (size < 50.dp) 4.dp else 8.dp)
+                .size(size, size)
                 .onFocusChanged { onControllerInteraction.invoke() },
     ) {
         Icon(
@@ -596,6 +700,7 @@ fun PlaybackFaButton(
     onControllerInteraction: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    size: androidx.compose.ui.unit.Dp = 56.dp,
 ) {
     val selectedColor = MaterialTheme.colorScheme.border
     Button(
@@ -607,11 +712,11 @@ fun PlaybackFaButton(
                 containerColor = AppColors.TransparentBlack25,
                 focusedContainerColor = selectedColor,
             ),
-        contentPadding = PaddingValues(8.dp),
+        contentPadding = PaddingValues(if (size < 50.dp) 4.dp else 8.dp),
         modifier =
             modifier
-                .padding(8.dp)
-                .size(56.dp, 56.dp)
+                .padding(if (size < 50.dp) 4.dp else 8.dp)
+                .size(size, size)
                 .onFocusChanged { onControllerInteraction.invoke() },
     ) {
         Box(
@@ -621,7 +726,7 @@ fun PlaybackFaButton(
                 text = stringResource(iconRes),
                 fontFamily = FontAwesome,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 28.sp,
+                fontSize = if (size < 50.dp) 20.sp else 28.sp,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
