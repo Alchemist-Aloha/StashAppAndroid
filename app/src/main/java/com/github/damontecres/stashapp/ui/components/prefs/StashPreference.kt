@@ -128,10 +128,27 @@ sealed interface StashPreference<T> {
             StashChoicePreference<Int>(
                 title = R.string.card_size_title,
                 prefKey = R.string.pref_key_card_size,
-                defaultValue = 5,
+                defaultValue =
+                    StashApplication
+                        .getApplication()
+                        .resources
+                        .getString(R.string.card_size_default)
+                        .toInt(),
                 displayValues = R.array.card_sizes,
-                indexToValue = { listOf(7, 6, 5, 4, 3)[it] },
-                valueToIndex = { listOf(7, 6, 5, 4, 3).indexOf(it) },
+                indexToValue = { index ->
+                    StashApplication
+                        .getApplication()
+                        .resources
+                        .getStringArray(R.array.card_size_cols)[index]
+                        .toInt()
+                },
+                valueToIndex = { value ->
+                    StashApplication
+                        .getApplication()
+                        .resources
+                        .getStringArray(R.array.card_size_cols)
+                        .indexOf(value.toString())
+                },
                 getter = { it.interfacePreferences.cardSize },
                 setter = { prefs, value ->
                     prefs.updateInterfacePreferences { cardSize = value }
@@ -142,7 +159,8 @@ sealed interface StashPreference<T> {
                             context.getString(R.string.pref_key_card_size),
                             null,
                         )
-                    value?.toIntOrNull() ?: 5
+                    value?.toIntOrNull()
+                        ?: context.resources.getString(R.string.card_size_default).toInt()
                 },
                 prefSetter = { context: Context, editor: SharedPreferences.Editor, value: Int ->
                     editor.putString(

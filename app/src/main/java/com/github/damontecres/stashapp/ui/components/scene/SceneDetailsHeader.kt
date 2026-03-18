@@ -44,6 +44,7 @@ import com.github.damontecres.stashapp.api.fragment.FullSceneData
 import com.github.damontecres.stashapp.api.fragment.StudioData
 import com.github.damontecres.stashapp.playback.PlaybackMode
 import com.github.damontecres.stashapp.ui.ComposeUiConfig
+import com.github.damontecres.stashapp.ui.compat.isNotTvDevice
 import com.github.damontecres.stashapp.ui.compat.isTvDevice
 import com.github.damontecres.stashapp.ui.components.DotSeparatedRow
 import com.github.damontecres.stashapp.ui.components.ItemOnClicker
@@ -88,13 +89,14 @@ fun SceneDetailsHeader(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val isNotTvDevice = isNotTvDevice
 
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
 //                .fillMaxHeight(.33f)
-                .height(460.dp)
+                .height(if (isNotTvDevice) 300.dp else 460.dp)
                 .bringIntoViewRequester(bringIntoViewRequester),
     ) {
         if (scene.paths.screenshot.isNotNullOrBlank()) {
@@ -187,6 +189,7 @@ fun SceneDetailsHeaderInfo(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val isNotTvDevice = isNotTvDevice
     Column(
         modifier = modifier,
     ) {
@@ -195,7 +198,7 @@ fun SceneDetailsHeaderInfo(
             text = scene.titleOrFilename ?: "",
             color = MaterialTheme.colorScheme.onSurface,
             style =
-                MaterialTheme.typography.displayMedium.copy(
+                (if (isNotTvDevice) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayMedium).copy(
                     shadow =
                         Shadow(
                             color = Color.DarkGray,

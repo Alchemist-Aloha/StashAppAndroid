@@ -348,11 +348,15 @@ fun StashGrid(
     val navigationManager = LocalGlobalContext.current.navigationManager
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
     val columns =
-        (
-            uiConfig.cardSettings.columns * (ScenePresenter.CARD_WIDTH.toDouble() / pager.filter.dataType.defaultCardWidth) +
-                // TODO better sizing
-                if (isNotTvDevice && orientation == Configuration.ORIENTATION_LANDSCAPE) 1 else 0
-        ).toInt()
+        if (isNotTvDevice) {
+            uiConfig.cardSettings.columns
+        } else {
+            (
+                uiConfig.cardSettings.columns * (ScenePresenter.CARD_WIDTH.toDouble() / pager.filter.dataType.defaultCardWidth) +
+                    // TODO better sizing
+                    if (isNotTvDevice && orientation == Configuration.ORIENTATION_LANDSCAPE) 1 else 0
+            ).toInt()
+        }
 
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()

@@ -277,14 +277,27 @@ fun PlaybackOverlay(
                                 .padding(start = 8.dp)
                                 .fillMaxWidth(.7f),
                     ) {
+                        val titleStyle =
+                            if (isNotTvDevice) {
+                                MaterialTheme.typography.titleMedium
+                            } else {
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontSize = 24.sp,
+                                )
+                            }
+                        val subtitleStyle =
+                            if (isNotTvDevice) {
+                                MaterialTheme.typography.bodyMedium
+                            } else {
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 16.sp,
+                                )
+                            }
                         if (scene.title.isNotNullOrBlank()) {
                             Text(
                                 text = scene.title,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                style =
-                                    MaterialTheme.typography.titleLarge.copy(
-                                        fontSize = 24.sp,
-                                    ),
+                                style = titleStyle,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -293,10 +306,7 @@ fun PlaybackOverlay(
                             Text(
                                 text = scene.subtitle,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontSize = 16.sp,
-                                    ),
+                                style = subtitleStyle,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
