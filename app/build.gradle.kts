@@ -81,6 +81,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -89,6 +90,8 @@ android {
 
             if (shouldSign) {
                 signingConfig = signingConfigs.getByName("ci")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
             }
         }
         debug {

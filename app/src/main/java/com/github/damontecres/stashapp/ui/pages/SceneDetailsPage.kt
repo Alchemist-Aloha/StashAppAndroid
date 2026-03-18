@@ -3,6 +3,8 @@ package com.github.damontecres.stashapp.ui.pages
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -116,6 +118,7 @@ import com.github.damontecres.stashapp.playback.PlaylistFragment
 import com.github.damontecres.stashapp.playback.buildMediaItem
 import com.github.damontecres.stashapp.playback.getStreamDecision
 import com.github.damontecres.stashapp.ui.components.playback.PlaybackPageContent
+import com.github.damontecres.stashapp.ui.components.playback.PlaybackPositionCache
 import com.github.damontecres.stashapp.StashExoPlayer
 import com.github.damontecres.stashapp.ui.compat.isNotTvDevice
 import com.github.damontecres.stashapp.util.SkipParams
@@ -484,54 +487,20 @@ fun SceneDetails(
             setTag(PlaylistFragment.MediaItemTag(playbackScene, decision))
         }
     }
+    val inlineStartPosition =
+        if (server.serverPreferences.alwaysStartFromBeginning) {
+            0L
+        } else {
+            PlaybackPositionCache.getScenePosition(scene.id)
+                ?: scene.resume_position
+                ?: C.TIME_UNSET
+        }
 
     LazyColumn(
         state = listState,
         contentPadding = PaddingValues(bottom = 135.dp),
         modifier = modifier,
     ) {
-        if (isNotTvDevice) {
-            item {
-                Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-                    PlaybackPageContent(
-                        server = server,
-                        player = exoPlayer,
-                        playlist = listOf(mediaItem),
-                        startIndex = 0,
-                        uiConfig = uiConfig,
-                        markersEnabled = true,
-                        playlistPager = null,
-                        onClickPlaylistItem = null,
-                        itemOnClick = itemOnClick,
-                        controlsEnabled = true,
-                        startPosition = if (server.serverPreferences.alwaysStartFromBeginning) 0L else scene.resume_position ?: C.TIME_UNSET,
-                        onFullScreenClick = {
-                            val filterArgs =
-                                FilterArgs(
-                                    DataType.SCENE,
-                                    objectFilter =
-                                        SceneFilterType(
-                                            id =
-                                                Optional.present(
-                                                    IntCriterionInput(
-                                                        value = scene.id.toInt(),
-                                                        modifier = CriterionModifier.EQUALS,
-                                                    ),
-                                                ),
-                                        ),
-                                )
-                            val destination =
-                                Destination.Playlist(
-                                    filterArgs = filterArgs,
-                                    position = 0,
-                                    duration = playbackScene.duration?.toLongMilliseconds ?: 0L,
-                                )
-                            navigationManager.navigate(destination)
-                        }
-                    )
-                }
-            }
-        }
         if (isNotTvDevice) {
             item {
                 Box(
@@ -552,29 +521,13 @@ fun SceneDetails(
                         onClickPlaylistItem = null,
                         itemOnClick = itemOnClick,
                         controlsEnabled = true,
-                        startPosition = if (server.serverPreferences.alwaysStartFromBeginning) 0L else scene.resume_position ?: C.TIME_UNSET,
+                        startPosition = inlineStartPosition,
+                        fullScreen = false,
                         onFullScreenClick = {
-                            val filterArgs =
-                                FilterArgs(
-                                    DataType.SCENE,
-                                    objectFilter =
-                                        SceneFilterType(
-                                            id =
-                                                Optional.present(
-                                                    IntCriterionInput(
-                                                        value = scene.id.toInt(),
-                                                        modifier = CriterionModifier.EQUALS,
-                                                    ),
-                                                ),
-                                        ),
-                                )
-                            val destination =
-                                Destination.Playlist(
-                                    filterArgs = filterArgs,
-                                    position = 0,
-                                    duration = playbackScene.duration?.toLongMilliseconds ?: 0L,
-                                )
-                            navigationManager.navigate(destination)
+                            playOnClick(
+                                exoPlayer.currentPosition.coerceAtLeast(0L),
+                                PlaybackMode.Choose,
+                            )
                         }
                     )
                 }

@@ -43,6 +43,7 @@ import com.github.damontecres.stashapp.ui.FilterViewModel
 import com.github.damontecres.stashapp.ui.components.CircularProgress
 import com.github.damontecres.stashapp.ui.components.ItemOnClicker
 import com.github.damontecres.stashapp.ui.components.playback.PlaybackPageContent
+import com.github.damontecres.stashapp.ui.components.playback.PlaybackPositionCache
 import com.github.damontecres.stashapp.ui.util.OneTimeLaunchedEffect
 import com.github.damontecres.stashapp.util.AlphabetSearchUtils
 import com.github.damontecres.stashapp.util.LoggingCoroutineExceptionHandler
@@ -139,6 +140,9 @@ fun PlaybackPage(
             startPosition = startPosition,
             onClickPlaylistItem = null,
             itemOnClick = itemOnClick,
+            onDisposePosition = { position ->
+                PlaybackPositionCache.setScenePosition(sceneId, position)
+            },
         )
     }
 }

@@ -3,6 +3,7 @@ package com.github.damontecres.stashapp.ui.components.scene
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -189,6 +190,12 @@ fun SceneDetailsHeader(
                 oCounterOnLongClick = oCounterOnLongClick,
                 editOnClick = editOnClick,
                 moreOnClick = moreOnClick,
+                playOnClick = {
+                    playOnClick.invoke(
+                        scene.resume_position ?: 0,
+                        PlaybackMode.Choose
+                    )
+                },
                 showEditButton = showEditButton,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
@@ -204,6 +211,7 @@ fun MobileActionRow(
     oCounterOnLongClick: () -> Unit,
     editOnClick: () -> Unit,
     moreOnClick: () -> Unit,
+    playOnClick: () -> Unit,
     showEditButton: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -212,6 +220,21 @@ fun MobileActionRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // Play button for mobile
+        com.github.damontecres.stashapp.ui.compat.Button(
+            onClick = playOnClick,
+        ) {
+            androidx.compose.material3.Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+            )
+            androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
+            Text(
+                text = stringResource(R.string.play),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+
         // O-Counter
         com.github.damontecres.stashapp.ui.components.OCounterButton(
             sfwMode = sfwMode,

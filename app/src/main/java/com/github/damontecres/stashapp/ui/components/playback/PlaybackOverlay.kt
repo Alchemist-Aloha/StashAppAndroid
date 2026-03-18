@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -164,11 +165,13 @@ fun PlaybackOverlay(
     videoDecoder: String?,
     audioDecoder: String?,
     spriteData: List<SpriteData>,
+    fullScreen: Boolean,
     modifier: Modifier = Modifier,
     seekPreviewPlaceholder: Painter? = null,
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-) {
+    ) {
     val context = LocalContext.current
+
     val scope = rememberCoroutineScope()
     var seekProgress by remember { mutableFloatStateOf(-1f) }
     val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
@@ -253,68 +256,75 @@ fun PlaybackOverlay(
                 }
             }
         }
-        val controlHeight = .4f
         val listState = rememberLazyListState()
-        var height = 160.dp
-        if (!uiConfig.showTitleDuringPlayback || scene.title.isNullOrBlank()) height -= 16.dp
-        if (!uiConfig.showTitleDuringPlayback || scene.subtitle.isNullOrBlank()) height -= 16.dp
-        if (markers.isEmpty()) height -= 16.dp
+        var markerBarHeight = 100.dp
+        if (!uiConfig.showTitleDuringPlayback || scene.title.isNullOrBlank()) markerBarHeight -= 16.dp
+        if (!uiConfig.showTitleDuringPlayback || scene.subtitle.isNullOrBlank()) markerBarHeight -= 16.dp
+        if (markers.isEmpty()) markerBarHeight -= 16.dp
+
+        val isMobileFullscreen = isNotTvDevice && fullScreen
+        var controlsMaxHeight = if (isMobileFullscreen) 220.dp else markerBarHeight
+        if (!uiConfig.showTitleDuringPlayback || scene.title.isNullOrBlank()) controlsMaxHeight -= 16.dp
+        if (!uiConfig.showTitleDuringPlayback || scene.subtitle.isNullOrBlank()) controlsMaxHeight -= 16.dp
+        if (markers.isEmpty()) controlsMaxHeight -= 16.dp
+        val controlsMinHeight = if (isMobileFullscreen) 132.dp else 0.dp
         LazyColumn(
             state = listState,
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(height),
-//                        .fillMaxHeight(controlHeight),
-//                contentPadding = PaddingValues(top = 420.dp),
+                    .heightIn(
+                        min = controlsMinHeight,
+                        max = controlsMaxHeight.coerceAtLeast(controlsMinHeight),
+                    ),
         ) {
-            if (uiConfig.showTitleDuringPlayback) {
-                item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .padding(start = 8.dp)
-                                .fillMaxWidth(.7f),
-                    ) {
-                        val titleStyle =
-                            if (isNotTvDevice) {
-                                MaterialTheme.typography.titleSmall
-                            } else {
-                                MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 18.sp,
-                                )
-                            }
-                        val subtitleStyle =
-                            if (isNotTvDevice) {
-                                MaterialTheme.typography.bodySmall
-                            } else {
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = 14.sp,
-                                )
-                            }
-                        if (scene.title.isNotNullOrBlank()) {
-                            Text(
-                                text = scene.title,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                style = titleStyle,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+        if (false) { // uiConfig.showTitleDuringPlayback
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier =
+                        Modifier
+                            .padding(start = 8.dp)
+                            .fillMaxWidth(.7f),
+                ) {
+                    val titleStyle =
+                        if (isNotTvDevice) {
+                            MaterialTheme.typography.titleSmall
+                        } else {
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontSize = 18.sp,
                             )
                         }
-                        if (scene.subtitle.isNotNullOrBlank()) {
-                            Text(
-                                text = scene.subtitle,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                style = subtitleStyle,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                    val subtitleStyle =
+                        if (isNotTvDevice) {
+                            MaterialTheme.typography.bodySmall
+                        } else {
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 14.sp,
                             )
                         }
+                    if (scene.title.isNotNullOrBlank()) {
+                        Text(
+                            text = scene.title,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            style = titleStyle,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (scene.subtitle.isNotNullOrBlank()) {
+                        Text(
+                            text = scene.subtitle,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            style = subtitleStyle,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
             }
+        }
             item {
                 PlaybackControls(
                     modifier = Modifier.fillMaxWidth(),
@@ -343,6 +353,7 @@ fun PlaybackOverlay(
                     scale = scale,
                     seekBarIntervals = uiConfig.preferences.playbackPreferences.seekBarSteps,
                     sfwMode = uiConfig.sfwMode,
+                    fullScreenMode = fullScreen,
                 )
             }
             if (markers.isNotEmpty()) {
@@ -361,7 +372,7 @@ fun PlaybackOverlay(
                             Modifier
                                 .padding(start = 8.dp, top = 64.dp, bottom = 64.dp)
                                 .fillMaxWidth()
-                                .height(height),
+                                .height(markerBarHeight),
                         markers = markers,
                         player = playerControls,
                         controllerViewState = controllerViewState,
@@ -735,6 +746,7 @@ private fun PlaybackOverlayPreview() {
                     ),
                 ),
             spriteData = emptyList(),
+            fullScreen = false,
             videoDecoder = "OMX.video.decoder",
             audioDecoder = "OMX.audio.decoder",
         )

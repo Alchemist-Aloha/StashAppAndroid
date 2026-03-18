@@ -263,13 +263,13 @@ abstract class PlaybackFragment(
                 .getBoolean("exoShowTitle", true)
         if (showTitle) {
             titleText.text = scene.title
-            dateText.text = scene.subtitle
+        //                dateText.text = scene.subtitle
             if (dateText.text.isNullOrBlank()) {
                 dateText.visibility = View.GONE
             }
         } else {
             titleText.visibility = View.GONE
-            dateText.visibility = View.GONE
+        //                dateText.visibility = View.GONE
         }
 
         if (scene.oCounter != null) {
@@ -277,6 +277,7 @@ abstract class PlaybackFragment(
         } else {
             oCounterText.text = getString(R.string.zero)
         }
+
         if (readOnlyModeEnabled()) {
             oCounterButton.isEnabled = false
         } else {

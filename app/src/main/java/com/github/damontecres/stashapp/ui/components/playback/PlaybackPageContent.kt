@@ -145,6 +145,9 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.milliseconds
 
+import android.content.pm.ActivityInfo
+import androidx.compose.runtime.DisposableEffect
+
 const val TAG = "PlaybackPageContent"
 
 class PlaybackViewModel : ViewModel() {
@@ -468,6 +471,8 @@ fun PlaybackPageContent(
     viewModel: PlaybackViewModel = viewModel(),
     startPosition: Long = C.TIME_UNSET,
     onFullScreenClick: (() -> Unit)? = null,
+    fullScreen: Boolean = true,
+    onDisposePosition: ((Long) -> Unit)? = null,
 ) {
     var savedStartPosition by rememberSaveable(startPosition) { mutableLongStateOf(startPosition) }
     var currentPlaylistIndex by rememberSaveable(startIndex) { mutableIntStateOf(startIndex) }
@@ -477,6 +482,45 @@ fun PlaybackPageContent(
 
     val context = LocalContext.current
     val navigationManager = LocalGlobalContext.current.navigationManager
+    val isNotTvDevice = isNotTvDevice
+
+    if (isNotTvDevice && controlsEnabled && fullScreen) {
+        DisposableEffect(player) {
+            val activity = context.findActivity()
+            val listener =
+                object : Player.Listener {
+                    override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                        if (videoSize.width > 0 && videoSize.height > 0) {
+                            val isVertical = videoSize.height > videoSize.width
+                            activity?.requestedOrientation =
+                                if (isVertical) {
+                                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                                } else {
+                                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                                }
+                        }
+                    }
+                }
+            player.addListener(listener)
+
+            // Initial check if video size is already known
+            val videoSize = player.videoSize
+            if (videoSize.width > 0 && videoSize.height > 0) {
+                val isVertical = videoSize.height > videoSize.width
+                activity?.requestedOrientation =
+                    if (isVertical) {
+                        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    } else {
+                        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    }
+            }
+
+            onDispose {
+                player.removeListener(listener)
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
+        }
+    }
     val currentScene by viewModel.mediaItemTag.observeAsState(
         playlist[currentPlaylistIndex].localConfiguration!!.tag as PlaylistFragment.MediaItemTag,
     )
@@ -503,6 +547,7 @@ fun PlaybackPageContent(
     LifecycleStartEffect(Unit) {
         onStopOrDispose {
             savedStartPosition = player.currentPosition
+            onDisposePosition?.invoke(savedStartPosition)
             currentPlaylistIndex = player.currentMediaItemIndex
             StashExoPlayer.releasePlayer()
         }
@@ -1010,9 +1055,11 @@ fun PlaybackPageContent(
                     videoDecoder = videoDecoder,
                     audioDecoder = audioDecoder,
                     spriteData = spriteImageLoaded,
+                    fullScreen = fullScreen,
                 )
             }
         }
+
         val dismiss = {
             createMarkerPosition = -1
             if (playingBeforeDialog) {
