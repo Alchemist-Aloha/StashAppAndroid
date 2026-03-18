@@ -45,6 +45,7 @@ fun SceneCard(
     getFilterAndPosition: ((item: Any) -> FilterAndPosition)?,
     modifier: Modifier = Modifier,
     cardContext: CardContext.SceneCardContext? = null,
+    fillMaxWidth: Boolean = false,
 ) {
     val dataTypeMap = EnumMap<DataType, Int>(DataType::class.java)
     item?.let {
@@ -163,5 +164,6 @@ fun SceneCard(
                 }
             }
         },
+        fillMaxWidth = fillMaxWidth,
     )
 }

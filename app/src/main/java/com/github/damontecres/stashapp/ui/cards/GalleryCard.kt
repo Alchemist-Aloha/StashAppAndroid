@@ -45,6 +45,7 @@ fun GalleryCard(
     longClicker: LongClicker<Any>,
     getFilterAndPosition: ((item: Any) -> FilterAndPosition)?,
     modifier: Modifier = Modifier,
+    fillMaxWidth: Boolean = false,
 ) {
     val dataTypeMap = EnumMap<DataType, Int>(DataType::class.java)
     item?.let {
@@ -126,5 +127,6 @@ fun GalleryCard(
         },
         interactionSource = interactionSource,
         extraImageUrls = extraImageUrls,
+        fillMaxWidth = fillMaxWidth,
     )
 }

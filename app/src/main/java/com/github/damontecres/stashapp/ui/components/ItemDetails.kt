@@ -50,6 +50,7 @@ import com.github.damontecres.stashapp.ui.pages.DialogParams
 import com.github.damontecres.stashapp.ui.pages.SearchForDialog
 import com.github.damontecres.stashapp.ui.pages.SearchForParams
 import com.github.damontecres.stashapp.ui.titleCount
+import com.github.damontecres.stashapp.ui.util.ifElse
 import com.github.damontecres.stashapp.util.isNotNullOrBlank
 
 @Composable
@@ -75,6 +76,7 @@ fun ItemDetails(
 
     var showDialog by remember { mutableStateOf<DialogParams?>(null) }
     var searchForDataType by remember { mutableStateOf<SearchForParams?>(null) }
+    val isNotTvDevice = com.github.damontecres.stashapp.ui.compat.isNotTvDevice
 
     val removeLongClicker =
         remember {
@@ -129,116 +131,229 @@ fun ItemDetails(
             }
         }
 
-    Row(
-        modifier =
-            modifier
-                .fillMaxSize(),
-    ) {
-        if (imageUrl.isNotNullOrBlank()) {
-            AsyncImage(
-                modifier =
-                    Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth(.5f)
-                        .fillMaxHeight(),
-                model =
-                    ImageRequest
-                        .Builder(LocalContext.current)
-                        .data(imageUrl)
-                        .crossfade(false)
-                        .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-            )
-        }
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(top = 16.dp),
-            modifier = Modifier.padding(12.dp),
+    if (isNotTvDevice) {
+        androidx.compose.foundation.layout.Column(
+            modifier = modifier.fillMaxSize(),
         ) {
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier,
-                ) {
-                    if (favorite != null && favoriteClick != null) {
-                        val color = if (favorite) Color.Red else Color.LightGray
+            if (imageUrl.isNotNullOrBlank()) {
+                AsyncImage(
+                    modifier =
+                        Modifier
+                            .padding(12.dp)
+                            .fillMaxWidth()
+                            .height(300.dp),
+                    model =
+                        ImageRequest
+                            .Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(false)
+                            .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                )
+            }
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 135.dp),
+                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+            ) {
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier,
+                    ) {
+                        if (favorite != null && favoriteClick != null) {
+                            val color = if (favorite) Color.Red else Color.LightGray
 
-                        ProvideTextStyle(MaterialTheme.typography.displayLarge.copy(color = color)) {
-                            Button(
-                                onClick = favoriteClick,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.fa_heart),
-                                    fontFamily = FontAwesome,
-                                )
+                            ProvideTextStyle(MaterialTheme.typography.displayLarge.copy(color = color)) {
+                                Button(
+                                    onClick = favoriteClick,
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.fa_heart),
+                                        fontFamily = FontAwesome,
+                                    )
+                                }
                             }
                         }
+                        if (uiConfig.readOnlyModeDisabled && editableTypes.isNotEmpty()) {
+                            EditButton(
+                                onClick = {
+                                    showDialog =
+                                        DialogParams(
+                                            false,
+                                            context.getString(R.string.stashapp_actions_edit),
+                                            buildEditList(context, editableTypes) {
+                                                searchForDataType = it
+                                            },
+                                        )
+                                },
+                            )
+                        }
                     }
-                    if (uiConfig.readOnlyModeDisabled && editableTypes.isNotEmpty()) {
-                        EditButton(
-                            onClick = {
-                                showDialog =
-                                    DialogParams(
-                                        false,
-                                        context.getString(R.string.stashapp_actions_edit),
-                                        buildEditList(context, editableTypes) {
-                                            searchForDataType = it
-                                        },
-                                    )
-                            },
+                }
+                if (rating100Click != null) {
+                    item {
+                        Rating100(
+                            rating100 = rating100 ?: 0,
+                            uiConfig = uiConfig,
+                            onRatingChange = rating100Click,
+                            enabled = uiConfig.readOnlyModeDisabled,
+                            modifier =
+                                Modifier
+                                    .height(ratingBarHeight)
+                                    .padding(start = 0.dp),
+                        )
+                    }
+                }
+                items(tableRows) { row ->
+                    TableRowComposable(row)
+                }
+
+                if (!tags.isNullOrEmpty()) {
+                    item {
+                        ItemsRow(
+                            title = titleCount(R.string.stashapp_tags, tags),
+                            items = tags,
+                            uiConfig = uiConfig,
+                            itemOnClick = itemOnClick,
+                            longClicker = removeLongClicker,
+                            modifier =
+                                Modifier
+                                    .padding(top = 12.dp)
+                                    .animateItem(),
+                        )
+                    }
+                }
+
+                bodyContent?.invoke(this)
+
+                basicItemInfo?.let {
+                    item {
+                        ItemDetailsFooter(
+                            id = it.id,
+                            createdAt = it.createdAt?.toString(),
+                            updatedAt = it.updatedAt?.toString(),
+                            modifier =
+                                Modifier
+                                    .padding(top = 32.dp)
+                                    .fillMaxWidth(),
                         )
                     }
                 }
             }
-            if (rating100Click != null) {
+        }
+    } else {
+        Row(
+            modifier = modifier.fillMaxSize(),
+        ) {
+            if (imageUrl.isNotNullOrBlank()) {
+                AsyncImage(
+                    modifier =
+                        Modifier
+                            .padding(12.dp)
+                            .fillMaxWidth(.5f)
+                            .fillMaxHeight(),
+                    model =
+                        ImageRequest
+                            .Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(false)
+                            .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                )
+            }
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 135.dp),
+                modifier = Modifier.padding(12.dp).weight(1f),
+            ) {
                 item {
-                    Rating100(
-                        rating100 = rating100 ?: 0,
-                        uiConfig = uiConfig,
-                        onRatingChange = rating100Click,
-                        enabled = uiConfig.readOnlyModeDisabled,
-                        modifier =
-                            Modifier
-                                .height(ratingBarHeight)
-                                .padding(start = 0.dp),
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier,
+                    ) {
+                        if (favorite != null && favoriteClick != null) {
+                            val color = if (favorite) Color.Red else Color.LightGray
+
+                            ProvideTextStyle(MaterialTheme.typography.displayLarge.copy(color = color)) {
+                                Button(
+                                    onClick = favoriteClick,
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.fa_heart),
+                                        fontFamily = FontAwesome,
+                                    )
+                                }
+                            }
+                        }
+                        if (uiConfig.readOnlyModeDisabled && editableTypes.isNotEmpty()) {
+                            EditButton(
+                                onClick = {
+                                    showDialog =
+                                        DialogParams(
+                                            false,
+                                            context.getString(R.string.stashapp_actions_edit),
+                                            buildEditList(context, editableTypes) {
+                                                searchForDataType = it
+                                            },
+                                        )
+                                },
+                            )
+                        }
+                    }
                 }
-            }
-            items(tableRows) { row ->
-                TableRowComposable(row)
-            }
-
-            if (!tags.isNullOrEmpty()) {
-                item {
-                    ItemsRow(
-                        title = titleCount(R.string.stashapp_tags, tags),
-                        items = tags,
-                        uiConfig = uiConfig,
-                        itemOnClick = itemOnClick,
-                        longClicker = removeLongClicker,
-                        modifier =
-                            Modifier
-                                .padding(top = 12.dp)
-                                .animateItem(),
-                    )
+                if (rating100Click != null) {
+                    item {
+                        Rating100(
+                            rating100 = rating100 ?: 0,
+                            uiConfig = uiConfig,
+                            onRatingChange = rating100Click,
+                            enabled = uiConfig.readOnlyModeDisabled,
+                            modifier =
+                                Modifier
+                                    .height(ratingBarHeight)
+                                    .padding(start = 0.dp),
+                        )
+                    }
                 }
-            }
+                items(tableRows) { row ->
+                    TableRowComposable(row)
+                }
 
-            bodyContent?.invoke(this)
+                if (!tags.isNullOrEmpty()) {
+                    item {
+                        ItemsRow(
+                            title = titleCount(R.string.stashapp_tags, tags),
+                            items = tags,
+                            uiConfig = uiConfig,
+                            itemOnClick = itemOnClick,
+                            longClicker = removeLongClicker,
+                            modifier =
+                                Modifier
+                                    .padding(top = 12.dp)
+                                    .animateItem(),
+                        )
+                    }
+                }
 
-            basicItemInfo?.let {
-                item {
-                    ItemDetailsFooter(
-                        id = it.id,
-                        createdAt = it.createdAt?.toString(),
-                        updatedAt = it.updatedAt?.toString(),
-                        modifier =
-                            Modifier
-                                .padding(top = 32.dp)
-                                .fillMaxWidth(),
-                    )
+                bodyContent?.invoke(this)
+
+                basicItemInfo?.let {
+                    item {
+                        ItemDetailsFooter(
+                            id = it.id,
+                            createdAt = it.createdAt?.toString(),
+                            updatedAt = it.updatedAt?.toString(),
+                            modifier =
+                                Modifier
+                                    .padding(top = 32.dp)
+                                    .fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }

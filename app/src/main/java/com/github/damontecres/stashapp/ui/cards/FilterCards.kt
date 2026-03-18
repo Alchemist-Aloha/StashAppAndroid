@@ -59,6 +59,7 @@ fun ViewAllCard(
     getFilterAndPosition: ((item: Any) -> FilterAndPosition)?,
     uiConfig: ComposeUiConfig,
     modifier: Modifier = Modifier,
+    fillMaxWidth: Boolean = false,
 ) {
     val width = dataTypeImageWidth(filter.dataType)
     val height = dataTypeImageHeight(filter.dataType)
@@ -93,5 +94,6 @@ fun ViewAllCard(
         description = {
             Text("")
         },
+        fillMaxWidth = fillMaxWidth,
     )
 }

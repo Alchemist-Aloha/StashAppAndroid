@@ -29,6 +29,7 @@ fun ImageCard(
     longClicker: LongClicker<Any>,
     getFilterAndPosition: ((item: Any) -> FilterAndPosition)?,
     modifier: Modifier = Modifier,
+    fillMaxWidth: Boolean = false,
 ) {
     val dataTypeMap = EnumMap<DataType, Int>(DataType::class.java)
     item?.let {
@@ -83,5 +84,6 @@ fun ImageCard(
         imageOverlay = {
             ImageOverlay(uiConfig.ratingAsStars, rating100 = item?.rating100)
         },
+        fillMaxWidth = fillMaxWidth,
     )
 }

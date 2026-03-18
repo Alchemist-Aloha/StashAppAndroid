@@ -203,44 +203,44 @@ fun ApplicationContent(
                 }
 
             val onSelectScreen = { page: DrawerPage ->
-                val refreshMain =
-                    selectedScreen == DrawerPage.HomePage && page == DrawerPage.HomePage
+                val alreadySelected = selectedScreen == page
                 Log.v(
                     TAG,
                     "Navigating to $page",
                 )
                 selectedScreen = page
-                if (refreshMain) {
-                    navigationManager.goToMain()
-                } else {
-                    val pageDest =
-                        when (page) {
-                            DrawerPage.HomePage -> {
-                                Destination.Main
-                            }
+                val pageDest =
+                    when (page) {
+                        DrawerPage.HomePage -> {
+                            Destination.Main
+                        }
 
-                            DrawerPage.SearchPage -> {
-                                Destination.Search
-                            }
+                        DrawerPage.SearchPage -> {
+                            Destination.Search
+                        }
 
-                            DrawerPage.SettingPage -> {
-                                if (composeUiConfig.readOnlyModeDisabled) {
-                                    Destination.Settings(
-                                        PreferenceScreenOption.BASIC,
-                                    )
-                                } else {
-                                    Destination.SettingsPin
-                                }
-                            }
-
-                            is DrawerPage.DataTypePage -> {
-                                Destination.Filter(
-                                    server.serverPreferences.getDefaultFilter(
-                                        page.dataType,
-                                    ),
+                        DrawerPage.SettingPage -> {
+                            if (composeUiConfig.readOnlyModeDisabled) {
+                                Destination.Settings(
+                                    PreferenceScreenOption.BASIC,
                                 )
+                            } else {
+                                Destination.SettingsPin
                             }
                         }
+
+                        is DrawerPage.DataTypePage -> {
+                            Destination.Filter(
+                                server.serverPreferences.getDefaultFilter(
+                                    page.dataType,
+                                ),
+                            )
+                        }
+                    }
+
+                if (alreadySelected && page == DrawerPage.HomePage) {
+                    navigationManager.goToMain()
+                } else {
                     navigationManager.navigateFromNavDrawer(pageDest)
                 }
             }

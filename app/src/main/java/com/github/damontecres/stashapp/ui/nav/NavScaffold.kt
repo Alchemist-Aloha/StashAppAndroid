@@ -81,20 +81,42 @@ fun NavScaffold(
                 .filter { page ->
                     page is DrawerPage.HomePage ||
                         page is DrawerPage.SearchPage ||
-                        (page is DrawerPage.DataTypePage && (page.dataType == DataType.SCENE || page.dataType == DataType.IMAGE))
+                        (page is DrawerPage.DataTypePage &&
+                            (page.dataType == DataType.SCENE ||
+                                page.dataType == DataType.PERFORMER ||
+                                page.dataType == DataType.STUDIO))
                 }.sortedBy {
                     when (it) {
                         is DrawerPage.HomePage -> 0
-                        is DrawerPage.DataTypePage -> if (it.dataType == DataType.SCENE) 1 else 2
-                        is DrawerPage.SearchPage -> 3
-                        else -> 4
+                        is DrawerPage.DataTypePage -> {
+                            when (it.dataType) {
+                                DataType.SCENE -> 1
+                                DataType.PERFORMER -> 2
+                                DataType.STUDIO -> 3
+                                else -> 4
+                            }
+                        }
+
+                        is DrawerPage.SearchPage -> 4
+                        else -> 5
                     }
                 }
         }
 
-    val isBottomNavItem =
-        remember(bottomNavItems, selectedScreen) {
-            bottomNavItems.contains(selectedScreen)
+    val isTopLevel =
+        remember(destination, server) {
+            when (destination) {
+                is Destination.Main -> true
+                is Destination.Search -> true
+                is Destination.Filter -> {
+                    val defaultFilter = server.serverPreferences.getDefaultFilter(destination.filterArgs.dataType)
+                    // If it's the default filter for the data type, consider it top-level
+                    destination.filterArgs.objectFilter == defaultFilter.objectFilter &&
+                        destination.filterArgs.findFilter?.q.isNullOrBlank()
+                }
+
+                else -> false
+            }
         }
 
     val titleStyle =
@@ -110,6 +132,12 @@ fun NavScaffold(
             ModalDrawerSheet {
                 Spacer(Modifier.height(12.dp))
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        text = stringResource(R.string.navigation),
+                        style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    )
                     pages.forEach { page ->
                         NavigationDrawerItem(
                             label = { Text(stringResource(page.name)) },
@@ -188,7 +216,7 @@ fun NavScaffold(
                     },
                     navigationIcon = {
                         IconButton(onClick = {
-                            if (!isBottomNavItem) {
+                            if (!isTopLevel) {
                                 navigationManager.goBack()
                             } else {
                                 scope.launch { drawerState.open() }
@@ -196,7 +224,7 @@ fun NavScaffold(
                         }) {
                             Icon(
                                 imageVector =
-                                    if (!isBottomNavItem) {
+                                    if (!isTopLevel) {
                                         Icons.AutoMirrored.Filled.ArrowBack
                                     } else {
                                         Icons.Default.Menu

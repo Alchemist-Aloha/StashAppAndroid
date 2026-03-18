@@ -44,6 +44,7 @@ fun PerformerCard(
     modifier: Modifier = Modifier,
     ageOnDate: String? = null,
     interactionSource: MutableInteractionSource? = null,
+    fillMaxWidth: Boolean = false,
 ) {
     val dataTypeMap = EnumMap<DataType, Int>(DataType::class.java)
     item?.let {
@@ -136,5 +137,6 @@ fun PerformerCard(
                 )
             }
         },
+        fillMaxWidth = fillMaxWidth,
     )
 }

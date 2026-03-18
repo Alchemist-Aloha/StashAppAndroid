@@ -34,6 +34,7 @@ fun GroupCard(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     cardContext: CardContext.GroupCardContext? = null,
+    fillMaxWidth: Boolean = false,
 ) {
     val dataTypeMap = EnumMap<DataType, Int>(DataType::class.java)
     item?.let {
@@ -113,5 +114,6 @@ fun GroupCard(
         imageOverlay = {
             ImageOverlay(uiConfig.ratingAsStars, rating100 = item?.rating100)
         },
+        fillMaxWidth = fillMaxWidth,
     )
 }

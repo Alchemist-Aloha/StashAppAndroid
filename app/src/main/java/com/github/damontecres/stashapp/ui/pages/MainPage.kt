@@ -222,9 +222,12 @@ fun HomePage(
     var focusedRow by rememberSaveable { mutableIntStateOf(0) }
 
     val listState = rememberLazyListState()
+    val isTvDevice = com.github.damontecres.stashapp.ui.compat.isTvDevice
 
     LaunchedEffect(focusedIndex) {
-        listState.animateScrollToItem(focusedRow)
+        if (isTvDevice) {
+            listState.animateScrollToItem(focusedRow)
+        }
     }
 
     Box(
@@ -232,70 +235,62 @@ fun HomePage(
             modifier
                 .fillMaxSize(),
     ) {
-        focusedItem?.let { item ->
-            val imageUrl =
-                when (item) {
-                    is SlimSceneData -> item.paths.screenshot
-                    is ImageData -> item.paths.image
-                    is PerformerData -> item.image_path
-                    is StudioData -> item.image_path
-                    is TagData -> item.image_path
-                    is MarkerData -> item.screenshot
-                    is GroupData -> item.front_image_path
-                    is GalleryData -> item.paths.cover
-                    else -> null
+        if (isTvDevice) {
+            focusedItem?.let { item ->
+                val imageUrl =
+                    when (item) {
+                        is SlimSceneData -> item.paths.screenshot
+                        is ImageData -> item.paths.image
+                        is PerformerData -> item.image_path
+                        is StudioData -> item.image_path
+                        is TagData -> item.image_path
+                        is MarkerData -> item.screenshot
+                        is GroupData -> item.front_image_path
+                        is GalleryData -> item.paths.cover
+                        else -> null
+                    }
+                if (imageUrl.isNotNullOrBlank()) {
+                    val gradientColor = MaterialTheme.colorScheme.background
+                    AsyncImage(
+                        model =
+                            ImageRequest
+                                .Builder(LocalContext.current)
+                                .data(imageUrl)
+                                .transitionFactory(CrossFadeFactory(250.milliseconds))
+                                .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        alignment = Alignment.TopEnd,
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .fillMaxHeight(.85f)
+                                .drawWithContent {
+                                    drawContent()
+                                    drawRect(
+                                        Brush.verticalGradient(
+                                            colorStops =
+                                                arrayOf(
+                                                    0f to Color.Transparent,
+                                                    .9f to gradientColor,
+                                                ),
+                                            startY = 0f,
+                                        ),
+                                    )
+                                    drawRect(
+                                        Brush.horizontalGradient(
+                                            colorStops =
+                                                arrayOf(
+                                                    0f to Color.Transparent,
+                                                    .8f to gradientColor,
+                                                ),
+                                            startX = size.width * .33f,
+                                            endX = 0f,
+                                        ),
+                                    )
+                                },
+                    )
                 }
-            if (imageUrl.isNotNullOrBlank()) {
-                val gradientColor = MaterialTheme.colorScheme.background
-                AsyncImage(
-                    model =
-                        ImageRequest
-                            .Builder(LocalContext.current)
-                            .data(imageUrl)
-                            .transitionFactory(CrossFadeFactory(250.milliseconds))
-                            .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    alignment = Alignment.TopEnd,
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopEnd)
-                            .fillMaxHeight(.85f)
-                            .drawWithContent {
-                                drawContent()
-                                drawRect(
-                                    Brush.verticalGradient(
-                                        colorStops =
-                                            arrayOf(
-                                                0f to Color.Transparent,
-                                                .9f to gradientColor,
-                                            ),
-                                        startY = 0f,
-                                    ),
-                                )
-                                drawRect(
-                                    Brush.horizontalGradient(
-                                        colorStops =
-                                            arrayOf(
-                                                0f to Color.Transparent,
-                                                .8f to gradientColor,
-                                            ),
-                                        startX = size.width * .33f,
-                                        endX = 0f,
-                                    ),
-                                )
-//                                drawLine(
-//                                    color = Color.Red,
-//                                    start = Offset(x = 0f, y = size.height * .5f),
-//                                    end = Offset(x = size.width, y = size.height),
-//                                )
-//                                drawLine(
-//                                    color = Color.Red,
-//                                    start = Offset.Zero,
-//                                    end = Offset(x = size.width, y = size.height),
-//                                )
-                            },
-                )
             }
         }
         Column(
@@ -304,12 +299,14 @@ fun HomePage(
                     .fillMaxSize()
                     .padding(12.dp),
         ) {
-            focusedItem?.let { item ->
-                MainPageHeader(
-                    item = item,
-                    uiConfig = uiConfig,
-                    modifier = Modifier.fillMaxWidth(.7f),
-                )
+            if (isTvDevice) {
+                focusedItem?.let { item ->
+                    MainPageHeader(
+                        item = item,
+                        uiConfig = uiConfig,
+                        modifier = Modifier.fillMaxWidth(.7f),
+                    )
+                }
             }
 
             LazyColumn(
@@ -470,41 +467,56 @@ fun ServerStatsRow(
     modifier: Modifier = Modifier,
 ) {
     serverStats?.let { stats ->
-        Row(
+        LazyRow(
             modifier = modifier,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
-            TitleValueText(
-                stringResource(R.string.stashapp_scenes),
-                formatNumber(stats.scene_count, server.serverPreferences.abbreviateCounters),
-            )
-            TitleValueText(
-                stringResource(R.string.stashapp_stats_scenes_size),
-                formatBytes(stats.scenes_size.toLong()),
-            )
-            TitleValueText(
-                stringResource(R.string.stashapp_images),
-                formatNumber(stats.image_count, server.serverPreferences.abbreviateCounters),
-            )
-            TitleValueText(
-                stringResource(R.string.stashapp_stats_image_size),
-                formatBytes(stats.images_size.toLong()),
-            )
-            TitleValueText(
-                stringResource(R.string.stashapp_stats_total_play_count),
-                formatNumber(stats.total_play_count, server.serverPreferences.abbreviateCounters),
-            )
-            TitleValueText(
-                stringResource(R.string.stashapp_stats_total_play_duration),
-                stats.total_play_duration
-                    .toLong()
-                    .seconds
-                    .toString(),
-            )
-            TitleValueText(
-                stringResource(R.string.stashapp_stats_total_o_count),
-                formatNumber(stats.total_o_count, server.serverPreferences.abbreviateCounters),
-            )
+            item {
+                TitleValueText(
+                    stringResource(R.string.stashapp_scenes),
+                    formatNumber(stats.scene_count, server.serverPreferences.abbreviateCounters),
+                )
+            }
+            item {
+                TitleValueText(
+                    stringResource(R.string.stashapp_stats_scenes_size),
+                    formatBytes(stats.scenes_size.toLong()),
+                )
+            }
+            item {
+                TitleValueText(
+                    stringResource(R.string.stashapp_images),
+                    formatNumber(stats.image_count, server.serverPreferences.abbreviateCounters),
+                )
+            }
+            item {
+                TitleValueText(
+                    stringResource(R.string.stashapp_stats_image_size),
+                    formatBytes(stats.images_size.toLong()),
+                )
+            }
+            item {
+                TitleValueText(
+                    stringResource(R.string.stashapp_stats_total_play_count),
+                    formatNumber(stats.total_play_count, server.serverPreferences.abbreviateCounters),
+                )
+            }
+            item {
+                TitleValueText(
+                    stringResource(R.string.stashapp_stats_total_play_duration),
+                    stats.total_play_duration
+                        .toLong()
+                        .seconds
+                        .toString(),
+                )
+            }
+            item {
+                TitleValueText(
+                    stringResource(R.string.stashapp_stats_total_o_count),
+                    formatNumber(stats.total_o_count, server.serverPreferences.abbreviateCounters),
+                )
+            }
         }
     }
 }

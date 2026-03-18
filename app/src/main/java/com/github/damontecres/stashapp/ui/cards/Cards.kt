@@ -46,6 +46,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
@@ -98,6 +99,7 @@ import com.github.damontecres.stashapp.ui.LocalPlayerContext
 import com.github.damontecres.stashapp.ui.compat.Card
 import com.github.damontecres.stashapp.ui.components.LongClicker
 import com.github.damontecres.stashapp.ui.enableMarquee
+import com.github.damontecres.stashapp.ui.util.ifElse
 import com.github.damontecres.stashapp.ui.util.playOnClickSound
 import com.github.damontecres.stashapp.util.CreateNew
 import com.github.damontecres.stashapp.util.asSlimeSceneData
@@ -254,6 +256,7 @@ fun RootCard(
     contentPadding: PaddingValues = PaddingValues(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     extraImageUrls: List<String> = listOf(),
+    fillMaxWidth: Boolean = false,
 ) {
     val context = LocalContext.current
     val videoDelay = uiConfig.preferences.interfacePreferences.cardPreviewDelayMs
@@ -287,11 +290,12 @@ fun RootCard(
         focusedAfterDelay = false
     }
 
+    val isNotTvDevice = com.github.damontecres.stashapp.ui.compat.isNotTvDevice
+    val scaleFactor = if (isNotTvDevice) 1f else (1 + (5f - uiConfig.cardSettings.columns) / uiConfig.cardSettings.columns)
     val height =
-        (imageHeight * (1 + (5f - uiConfig.cardSettings.columns) / uiConfig.cardSettings.columns))
-            .coerceAtMost(224.dp) // Prevent tall cards from being excessively tall
-    val width =
-        imageWidth * (1 + (5f - uiConfig.cardSettings.columns) / uiConfig.cardSettings.columns)
+        (imageHeight * scaleFactor)
+            .coerceAtMost(if (isNotTvDevice) 400.dp else 224.dp)
+    val width = imageWidth * scaleFactor
 
     Card(
         onClick = {
@@ -310,7 +314,7 @@ fun RootCard(
         modifier =
             modifier
                 .padding(0.dp)
-                .width(width),
+                .ifElse(fillMaxWidth, Modifier.fillMaxWidth(), Modifier.width(width)),
         interactionSource = interactionSource,
         shape = shape,
         colors = colors,
@@ -424,7 +428,8 @@ fun RootCard(
                 Text(
                     text = title,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    maxLines = 1,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier =
                         Modifier
                             .enableMarquee(focusedAfterDelay),
@@ -503,6 +508,7 @@ fun StashCard(
     getFilterAndPosition: ((item: Any) -> FilterAndPosition)?,
     modifier: Modifier = Modifier,
     cardContext: CardContext = CardContext.None,
+    fillMaxWidth: Boolean = false,
 ) {
     when (item) {
         is SlimSceneData? -> {
@@ -514,6 +520,7 @@ fun StashCard(
                 getFilterAndPosition,
                 modifier,
                 cardContext = cardContext as? CardContext.SceneCardContext,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -526,6 +533,7 @@ fun StashCard(
                 getFilterAndPosition,
                 modifier,
                 cardContext = cardContext as? CardContext.SceneCardContext,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -537,6 +545,7 @@ fun StashCard(
                 longClicker,
                 getFilterAndPosition,
                 modifier,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -548,6 +557,7 @@ fun StashCard(
                 longClicker,
                 getFilterAndPosition,
                 modifier,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -559,6 +569,7 @@ fun StashCard(
                 longClicker,
                 getFilterAndPosition,
                 modifier,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -570,6 +581,7 @@ fun StashCard(
                 longClicker,
                 getFilterAndPosition,
                 modifier,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -582,6 +594,7 @@ fun StashCard(
                 getFilterAndPosition,
                 modifier,
                 cardContext = cardContext as? CardContext.GroupCardContext,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -594,6 +607,7 @@ fun StashCard(
                 getFilterAndPosition,
                 modifier,
                 subtitle = item?.description,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -605,6 +619,7 @@ fun StashCard(
                 longClicker,
                 getFilterAndPosition,
                 modifier,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -616,6 +631,7 @@ fun StashCard(
                 longClicker,
                 getFilterAndPosition,
                 modifier,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -627,6 +643,7 @@ fun StashCard(
                 getFilterAndPosition = getFilterAndPosition,
                 uiConfig = uiConfig,
                 modifier = modifier,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 
@@ -650,6 +667,7 @@ fun StashCard(
                 longClicker = longClicker,
                 getFilterAndPosition = getFilterAndPosition,
                 modifier = modifier,
+                fillMaxWidth = fillMaxWidth,
             )
         }
 

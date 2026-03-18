@@ -1,5 +1,8 @@
 package com.github.damontecres.stashapp.ui.components.scene
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -109,7 +112,15 @@ fun SceneDetailsHeader(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .drawWithContent {
+                        .ifElse(
+                            isNotTvDevice,
+                            Modifier.clickable {
+                                playOnClick(
+                                    scene.resume_position ?: 0,
+                                    PlaybackMode.Choose,
+                                )
+                            },
+                        ).drawWithContent {
                             drawContent()
                             drawRect(
                                 Brush.verticalGradient(
@@ -150,24 +161,84 @@ fun SceneDetailsHeader(
                 showRatingBar = showRatingBar,
             )
             // Playback controls
-            PlayButtons(
-                resumePosition = scene.resume_position ?: 0,
-                oCount = oCount,
-                playOnClick = playOnClick,
-                editOnClick = editOnClick,
-                moreOnClick = moreOnClick,
-                oCounterOnClick = oCounterOnClick,
-                oCounterOnLongClick = oCounterOnLongClick,
-                focusRequester = focusRequester,
-                buttonOnFocusChanged = {
-                    if (it.isFocused) {
-                        scope.launch(StashCoroutineExceptionHandler()) { bringIntoViewRequester.bringIntoView() }
-                    }
-                },
-                alwaysStartFromBeginning = alwaysStartFromBeginning,
-                showEditButton = showEditButton,
-                sfwMode = uiConfig.sfwMode,
-                modifier = Modifier.padding(vertical = 16.dp),
+            if (isTvDevice) {
+                PlayButtons(
+                    resumePosition = scene.resume_position ?: 0,
+                    oCount = oCount,
+                    playOnClick = playOnClick,
+                    editOnClick = editOnClick,
+                    moreOnClick = moreOnClick,
+                    oCounterOnClick = oCounterOnClick,
+                    oCounterOnLongClick = oCounterOnLongClick,
+                    focusRequester = focusRequester,
+                    buttonOnFocusChanged = {
+                        if (it.isFocused) {
+                            scope.launch(StashCoroutineExceptionHandler()) { bringIntoViewRequester.bringIntoView() }
+                        }
+                    },
+                    alwaysStartFromBeginning = alwaysStartFromBeginning,
+                    showEditButton = showEditButton,
+                    sfwMode = uiConfig.sfwMode,
+                    modifier = Modifier.padding(vertical = 16.dp),
+                )
+            } else {
+                MobileActionRow(
+                    sfwMode = uiConfig.sfwMode,
+                    oCount = oCount,
+                    oCounterOnClick = oCounterOnClick,
+                    oCounterOnLongClick = oCounterOnLongClick,
+                    editOnClick = editOnClick,
+                    moreOnClick = moreOnClick,
+                    showEditButton = showEditButton,
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MobileActionRow(
+    sfwMode: Boolean,
+    oCount: Int,
+    oCounterOnClick: () -> Unit,
+    oCounterOnLongClick: () -> Unit,
+    editOnClick: () -> Unit,
+    moreOnClick: () -> Unit,
+    showEditButton: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // O-Counter
+        com.github.damontecres.stashapp.ui.components.OCounterButton(
+            sfwMode = sfwMode,
+            oCount = oCount,
+            onClick = oCounterOnClick,
+            onLongClick = oCounterOnLongClick,
+            enabled = showEditButton,
+        )
+
+        if (showEditButton) {
+            com.github.damontecres.stashapp.ui.components.EditButton(
+                onClick = editOnClick,
+            )
+        }
+
+        com.github.damontecres.stashapp.ui.compat.Button(
+            onClick = moreOnClick,
+        ) {
+            androidx.compose.material3.Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = null,
+            )
+            androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
+            Text(
+                text = stringResource(R.string.more),
+                style = MaterialTheme.typography.titleSmall,
             )
         }
     }
