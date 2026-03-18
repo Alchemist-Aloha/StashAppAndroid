@@ -1,0 +1,67 @@
+--- app/src/main/java/com/github/damontecres/stashapp/ui/pages/SceneDetailsPage.kt
++++ app/src/main/java/com/github/damontecres/stashapp/ui/pages/SceneDetailsPage.kt
+@@ -102,6 +102,13 @@
+ import com.github.damontecres.stashapp.util.toSeconds
+ import com.github.damontecres.stashapp.views.durationToString
+ 
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.aspectRatio
++import androidx.media3.common.MediaItem
++import androidx.media3.common.C
++import com.github.damontecres.stashapp.data.Scene
++import com.github.damontecres.stashapp.playback.CodecSupport
++import com.github.damontecres.stashapp.playback.PlaylistFragment
++import com.github.damontecres.stashapp.playback.buildMediaItem
++import com.github.damontecres.stashapp.playback.getStreamDecision
++import com.github.damontecres.stashapp.ui.components.playback.PlaybackPageContent
++import com.github.damontecres.stashapp.StashExoPlayer
++import com.github.damontecres.stashapp.ui.compat.isNotTvDevice
++import com.github.damontecres.stashapp.util.SkipParams
++
+ @Composable
+ fun SceneDetailsPage(
+     server: StashServer,
+@@ -425,12 +432,45 @@
+         }
+     val listState = rememberLazyListState()
++
++    val isNotTvDevice = isNotTvDevice
++    val playbackScene = remember(scene) { Scene.fromFullSceneData(scene) }
++    val skipParams =
++        remember(uiConfig.preferences.playbackPreferences) {
++            SkipParams.Values(
++                uiConfig.preferences.playbackPreferences.skipForwardMs.toLong(),
++                uiConfig.preferences.playbackPreferences.skipBackwardMs.toLong(),
++            )
++        }
++    val exoPlayer = remember { StashExoPlayer.getInstance(context, server, skipParams) }
++    val mediaItem = remember(playbackScene, context, uiConfig) {
++        val decision = getStreamDecision(
++            context,
++            playbackScene,
++            PlaybackMode.Choose,
++            uiConfig.preferences.playbackPreferences.streamChoice,
++            uiConfig.preferences.playbackPreferences.transcodeAboveResolution,
++            CodecSupport.getSupportedCodecs(uiConfig.preferences.playbackPreferences)
++        )
++        buildMediaItem(context, decision, playbackScene) {
++            setTag(PlaylistFragment.MediaItemTag(playbackScene, decision))
++        }
++    }
++
+     LazyColumn(
+         state = listState,
+         contentPadding = PaddingValues(bottom = 135.dp),
+         modifier = modifier,
+     ) {
++        if (isNotTvDevice) {
++            item {
++                Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
++                    PlaybackPageContent(server = server, player = exoPlayer, playlist = listOf(mediaItem), startIndex = 0, uiConfig = uiConfig, markersEnabled = true, playlistPager = null, onClickPlaylistItem = null, itemOnClick = itemOnClick, controlsEnabled = true, startPosition = if (server.serverPreferences.alwaysStartFromBeginning) 0L else scene.resume_position ?: C.TIME_UNSET)
++                }
++            }
++        }
+         item {
+             SceneDetailsHeader(
+                 modifier =

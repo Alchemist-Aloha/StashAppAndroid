@@ -120,6 +120,7 @@ fun PlaybackControls(
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     showDebugInfo: Boolean,
     onSeekProgress: (Float) -> Unit,
+    onFullScreenClick: (() -> Unit)? = null,
     showPlay: Boolean,
     previousEnabled: Boolean,
     nextEnabled: Boolean,
@@ -159,26 +160,26 @@ fun PlaybackControls(
         modifier = modifier.bringIntoViewRequester(bringIntoViewRequester),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        SeekBar(
-            scene = scene,
-            player = playerControls,
-            controllerViewState = controllerViewState,
-            onSeekProgress = onSeekProgress,
-            interactionSource = seekBarInteractionSource,
-            isEnabled = seekEnabled,
-            intervals = seekBarIntervals,
-            modifier =
-                Modifier
-                    .padding(vertical = 8.dp)
-                    .fillMaxWidth(.95f),
-        )
         if (isTvDevice) {
+            SeekBar(
+                scene = scene,
+                player = playerControls,
+                controllerViewState = controllerViewState,
+                onSeekProgress = onSeekProgress,
+                interactionSource = seekBarInteractionSource,
+                isEnabled = seekEnabled,
+                intervals = seekBarIntervals,
+                modifier =
+                    Modifier
+                        .padding(vertical = 4.dp)
+                        .fillMaxWidth(.95f),
+            )
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
-                        .padding(horizontal = 8.dp)
+                        .padding(horizontal = 4.dp)
                         .fillMaxWidth(),
             ) {
                 LeftPlaybackButtons(
@@ -189,6 +190,7 @@ fun PlaybackControls(
                     moreButtonOptions = moreButtonOptions,
                     sfwMode = sfwMode,
                     modifier = Modifier,
+                    buttonSize = 44.dp,
                 )
                 PlaybackButtons(
                     player = playerControls,
@@ -198,6 +200,7 @@ fun PlaybackControls(
                     previousEnabled = previousEnabled,
                     nextEnabled = nextEnabled,
                     modifier = Modifier,
+                    buttonSize = 44.dp,
                 )
                 RightPlaybackButtons(
                     modifier = Modifier,
@@ -210,17 +213,92 @@ fun PlaybackControls(
                     audioIndex = audioIndex,
                     playbackSpeed = playbackSpeed,
                     scale = scale,
+                    buttonSize = 44.dp,
                 )
             }
+        } else if (onFullScreenClick != null) {
+            // Simple mode for embedded player: Buttons ABOVE SeekBar
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            ) {
+                PlaybackButton(
+                    iconRes = R.drawable.baseline_skip_previous_24,
+                    onClick = {
+                        onControllerInteraction.invoke()
+                        playerControls.seekToPrevious()
+                    },
+                    enabled = previousEnabled,
+                    onControllerInteraction = onControllerInteraction,
+                    size = 24.dp,
+                )
+                PlaybackButton(
+                    modifier = Modifier.focusRequester(initialFocusRequester),
+                    iconRes = if (showPlay) R.drawable.baseline_play_arrow_24 else R.drawable.baseline_pause_24,
+                    onClick = {
+                        onControllerInteraction.invoke()
+                        playerControls.playOrPause()
+                    },
+                    onControllerInteraction = onControllerInteraction,
+                    size = 32.dp,
+                )
+                PlaybackButton(
+                    iconRes = R.drawable.baseline_skip_next_24,
+                    onClick = {
+                        onControllerInteraction.invoke()
+                        playerControls.seekToNext()
+                    },
+                    enabled = nextEnabled,
+                    onControllerInteraction = onControllerInteraction,
+                    size = 24.dp,
+                )
+                PlaybackFaButton(
+                    iconRes = R.string.fa_magnifying_glass_plus,
+                    onClick = {
+                        onControllerInteraction.invoke()
+                        onFullScreenClick.invoke()
+                    },
+                    onControllerInteraction = onControllerInteraction,
+                    size = 24.dp,
+                )
+            }
+            SeekBar(
+                scene = scene,
+                player = playerControls,
+                controllerViewState = controllerViewState,
+                onSeekProgress = onSeekProgress,
+                interactionSource = seekBarInteractionSource,
+                isEnabled = seekEnabled,
+                intervals = seekBarIntervals,
+                modifier =
+                    Modifier
+                        .padding(vertical = 4.dp)
+                        .fillMaxWidth(.95f),
+            )
         } else {
+            // Full mobile mode: SeekBar ABOVE Buttons
+            SeekBar(
+                scene = scene,
+                player = playerControls,
+                controllerViewState = controllerViewState,
+                onSeekProgress = onSeekProgress,
+                interactionSource = seekBarInteractionSource,
+                isEnabled = seekEnabled,
+                intervals = seekBarIntervals,
+                modifier =
+                    Modifier
+                        .padding(vertical = 4.dp)
+                        .fillMaxWidth(.95f),
+            )
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 // Row 1: Previous, Play/Pause, Next
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     PlaybackButton(
@@ -231,6 +309,7 @@ fun PlaybackControls(
                         },
                         enabled = previousEnabled,
                         onControllerInteraction = onControllerInteraction,
+                        size = 24.dp,
                     )
                     PlaybackButton(
                         modifier = Modifier.focusRequester(initialFocusRequester),
@@ -240,7 +319,7 @@ fun PlaybackControls(
                             playerControls.playOrPause()
                         },
                         onControllerInteraction = onControllerInteraction,
-                        size = 64.dp,
+                        size = 32.dp,
                     )
                     PlaybackButton(
                         iconRes = R.drawable.baseline_skip_next_24,
@@ -250,15 +329,16 @@ fun PlaybackControls(
                         },
                         enabled = nextEnabled,
                         onControllerInteraction = onControllerInteraction,
+                        size = 24.dp,
                     )
                 }
                 // Row 2: All other buttons (smaller)
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         PlaybackButton(
                             iconRes = R.drawable.baseline_fast_rewind_24,
                             onClick = {
@@ -266,7 +346,7 @@ fun PlaybackControls(
                                 playerControls.seekBack()
                             },
                             onControllerInteraction = onControllerInteraction,
-                            size = 40.dp,
+                            size = 24.dp,
                         )
                         PlaybackButton(
                             iconRes = R.drawable.baseline_fast_forward_24,
@@ -275,7 +355,7 @@ fun PlaybackControls(
                                 playerControls.seekForward()
                             },
                             onControllerInteraction = onControllerInteraction,
-                            size = 40.dp,
+                            size = 24.dp,
                         )
                     }
 
@@ -287,22 +367,38 @@ fun PlaybackControls(
                         moreButtonOptions = moreButtonOptions,
                         sfwMode = sfwMode,
                         modifier = Modifier,
-                        buttonSize = 40.dp,
+                        buttonSize = 24.dp,
                     )
 
-                    RightPlaybackButtons(
-                        modifier = Modifier,
-                        captions = captions,
-                        onControllerInteraction = onControllerInteraction,
-                        onControllerInteractionForDialog = onControllerInteractionForDialog,
-                        onPlaybackActionClick = onPlaybackActionClick,
-                        subtitleIndex = subtitleIndex,
-                        audioOptions = audioOptions,
-                        audioIndex = audioIndex,
-                        playbackSpeed = playbackSpeed,
-                        scale = scale,
-                        buttonSize = 40.dp,
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RightPlaybackButtons(
+                            modifier = Modifier,
+                            captions = captions,
+                            onControllerInteraction = onControllerInteraction,
+                            onControllerInteractionForDialog = onControllerInteractionForDialog,
+                            onPlaybackActionClick = onPlaybackActionClick,
+                            subtitleIndex = subtitleIndex,
+                            audioOptions = audioOptions,
+                            audioIndex = audioIndex,
+                            playbackSpeed = playbackSpeed,
+                            scale = scale,
+                            buttonSize = 24.dp,
+                        )
+                        if (onFullScreenClick != null) {
+                            PlaybackFaButton(
+                                iconRes = R.string.fa_magnifying_glass_plus,
+                                onClick = {
+                                    onControllerInteraction.invoke()
+                                    onFullScreenClick.invoke()
+                                },
+                                onControllerInteraction = onControllerInteraction,
+                                size = 24.dp,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -445,7 +541,7 @@ fun LeftPlaybackButtons(
             Text(
                 text = oCount.toString(),
                 color = MaterialTheme.colorScheme.onBackground,
-                fontSize = if (buttonSize < 50.dp) 12.sp else 16.sp,
+                fontSize = if (buttonSize < 40.dp) 10.sp else 14.sp,
             )
         }
     }
@@ -607,6 +703,7 @@ fun PlaybackButtons(
     previousEnabled: Boolean,
     nextEnabled: Boolean,
     modifier: Modifier = Modifier,
+    buttonSize: androidx.compose.ui.unit.Dp = 56.dp,
 ) {
     Row(
         modifier = modifier.focusGroup(),
@@ -620,6 +717,7 @@ fun PlaybackButtons(
             },
             enabled = previousEnabled,
             onControllerInteraction = onControllerInteraction,
+            size = buttonSize,
         )
         PlaybackButton(
             iconRes = R.drawable.baseline_fast_rewind_24,
@@ -628,6 +726,7 @@ fun PlaybackButtons(
                 player.seekBack()
             },
             onControllerInteraction = onControllerInteraction,
+            size = buttonSize,
         )
         PlaybackButton(
             modifier = Modifier.focusRequester(initialFocusRequester),
@@ -637,6 +736,7 @@ fun PlaybackButtons(
                 player.playOrPause()
             },
             onControllerInteraction = onControllerInteraction,
+            size = buttonSize,
         )
         PlaybackButton(
             iconRes = R.drawable.baseline_fast_forward_24,
@@ -645,6 +745,7 @@ fun PlaybackButtons(
                 player.seekForward()
             },
             onControllerInteraction = onControllerInteraction,
+            size = buttonSize,
         )
         PlaybackButton(
             iconRes = R.drawable.baseline_skip_next_24,
@@ -654,6 +755,7 @@ fun PlaybackButtons(
             },
             enabled = nextEnabled,
             onControllerInteraction = onControllerInteraction,
+            size = buttonSize,
         )
     }
 }

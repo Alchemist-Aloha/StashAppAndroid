@@ -635,6 +635,7 @@ abstract class PlaybackFragment(
         StashExoPlayer.releasePlayer()
         player = preparePlayer()
         player!!.postSetupPlayer()
+        player?.play()
         super.onStart()
     }
 

@@ -48,6 +48,9 @@ import com.github.damontecres.stashapp.api.fragment.GroupData
 import com.github.damontecres.stashapp.api.fragment.GroupRelationshipData
 import com.github.damontecres.stashapp.api.fragment.ImageData
 import com.github.damontecres.stashapp.api.fragment.MarkerData
+import com.github.damontecres.stashapp.api.type.IntCriterionInput
+import com.github.damontecres.stashapp.api.type.SceneFilterType
+import com.github.damontecres.stashapp.util.toLongMilliseconds
 import com.github.damontecres.stashapp.api.fragment.MinimalSceneData
 import com.github.damontecres.stashapp.api.fragment.PerformerData
 import com.github.damontecres.stashapp.api.fragment.SlimImageData
@@ -101,6 +104,21 @@ import com.github.damontecres.stashapp.util.resume_position
 import com.github.damontecres.stashapp.util.titleOrFilename
 import com.github.damontecres.stashapp.util.toSeconds
 import com.github.damontecres.stashapp.views.durationToString
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.media3.common.MediaItem
+import androidx.media3.common.C
+import com.github.damontecres.stashapp.data.Scene
+import com.github.damontecres.stashapp.playback.CodecSupport
+import com.github.damontecres.stashapp.playback.PlaylistFragment
+import com.github.damontecres.stashapp.playback.buildMediaItem
+import com.github.damontecres.stashapp.playback.getStreamDecision
+import com.github.damontecres.stashapp.ui.components.playback.PlaybackPageContent
+import com.github.damontecres.stashapp.StashExoPlayer
+import com.github.damontecres.stashapp.ui.compat.isNotTvDevice
+import com.github.damontecres.stashapp.util.SkipParams
 
 @Composable
 fun SceneDetailsPage(
@@ -419,11 +437,149 @@ fun SceneDetails(
             }
         }
     val listState = rememberLazyListState()
+
+    val isNotTvDevice = isNotTvDevice
+    val playbackScene = remember(scene) { Scene.fromFullSceneData(scene) }
+    val playbackPrefs = uiConfig.preferences.playbackPreferences
+    val skipParams =
+        remember(playbackPrefs) {
+            SkipParams.Values(
+                playbackPrefs.skipForwardMs.toLong(),
+                playbackPrefs.skipBackwardMs.toLong(),
+            )
+        }
+    val exoPlayer = remember {
+        if (isNotTvDevice) {
+            StashExoPlayer.createInstance(
+                context,
+                server,
+                skipParams,
+                context.getString(R.string.playback_http_client_okhttp),
+                playbackPrefs.showDebugInfo,
+                playbackPrefs.playbackBackend,
+            )
+        } else {
+            StashExoPlayer.getInstance(context, server, skipParams)
+        }
+    }
+
+    if (isNotTvDevice) {
+        androidx.lifecycle.compose.LifecycleStartEffect(Unit) {
+            onStopOrDispose {
+                exoPlayer.release()
+            }
+        }
+    }
+    val codecSupport = remember(playbackPrefs) { CodecSupport.getSupportedCodecs(playbackPrefs) }
+    val mediaItem = remember(playbackScene, context, playbackPrefs, codecSupport) {
+        val decision = getStreamDecision(
+            context,
+            playbackScene,
+            PlaybackMode.Choose,
+            playbackPrefs.streamChoice,
+            playbackPrefs.transcodeAboveResolution,
+            codecSupport
+        )
+        buildMediaItem(context, decision, playbackScene) {
+            setTag(PlaylistFragment.MediaItemTag(playbackScene, decision))
+        }
+    }
+
     LazyColumn(
         state = listState,
         contentPadding = PaddingValues(bottom = 135.dp),
         modifier = modifier,
     ) {
+        if (isNotTvDevice) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+                    PlaybackPageContent(
+                        server = server,
+                        player = exoPlayer,
+                        playlist = listOf(mediaItem),
+                        startIndex = 0,
+                        uiConfig = uiConfig,
+                        markersEnabled = true,
+                        playlistPager = null,
+                        onClickPlaylistItem = null,
+                        itemOnClick = itemOnClick,
+                        controlsEnabled = true,
+                        startPosition = if (server.serverPreferences.alwaysStartFromBeginning) 0L else scene.resume_position ?: C.TIME_UNSET,
+                        onFullScreenClick = {
+                            val filterArgs =
+                                FilterArgs(
+                                    DataType.SCENE,
+                                    objectFilter =
+                                        SceneFilterType(
+                                            id =
+                                                Optional.present(
+                                                    IntCriterionInput(
+                                                        value = scene.id.toInt(),
+                                                        modifier = CriterionModifier.EQUALS,
+                                                    ),
+                                                ),
+                                        ),
+                                )
+                            val destination =
+                                Destination.Playlist(
+                                    filterArgs = filterArgs,
+                                    position = 0,
+                                    duration = playbackScene.duration?.toLongMilliseconds ?: 0L,
+                                )
+                            navigationManager.navigate(destination)
+                        }
+                    )
+                }
+            }
+        }
+        if (isNotTvDevice) {
+            item {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f)
+                            .background(Color.Black),
+                ) {
+                    PlaybackPageContent(
+                        server = server,
+                        player = exoPlayer,
+                        playlist = listOf(mediaItem),
+                        startIndex = 0,
+                        uiConfig = uiConfig,
+                        markersEnabled = true,
+                        playlistPager = null,
+                        onClickPlaylistItem = null,
+                        itemOnClick = itemOnClick,
+                        controlsEnabled = true,
+                        startPosition = if (server.serverPreferences.alwaysStartFromBeginning) 0L else scene.resume_position ?: C.TIME_UNSET,
+                        onFullScreenClick = {
+                            val filterArgs =
+                                FilterArgs(
+                                    DataType.SCENE,
+                                    objectFilter =
+                                        SceneFilterType(
+                                            id =
+                                                Optional.present(
+                                                    IntCriterionInput(
+                                                        value = scene.id.toInt(),
+                                                        modifier = CriterionModifier.EQUALS,
+                                                    ),
+                                                ),
+                                        ),
+                                )
+                            val destination =
+                                Destination.Playlist(
+                                    filterArgs = filterArgs,
+                                    position = 0,
+                                    duration = playbackScene.duration?.toLongMilliseconds ?: 0L,
+                                )
+                            navigationManager.navigate(destination)
+                        }
+                    )
+                }
+            }
+        }
         item {
             SceneDetailsHeader(
                 modifier =

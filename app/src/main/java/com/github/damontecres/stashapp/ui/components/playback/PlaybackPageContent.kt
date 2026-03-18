@@ -4,6 +4,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -465,6 +467,7 @@ fun PlaybackPageContent(
     controlsEnabled: Boolean = true,
     viewModel: PlaybackViewModel = viewModel(),
     startPosition: Long = C.TIME_UNSET,
+    onFullScreenClick: (() -> Unit)? = null,
 ) {
     var savedStartPosition by rememberSaveable(startPosition) { mutableLongStateOf(startPosition) }
     var currentPlaylistIndex by rememberSaveable(startIndex) { mutableIntStateOf(startIndex) }
@@ -716,6 +719,7 @@ fun PlaybackPageContent(
         )
 
         player.prepare()
+        player.play()
         if (useVideoFilters) {
             Log.d(TAG, "Enabling video effects")
             (player as? ExoPlayer)?.setVideoEffects(listOf())
@@ -844,7 +848,7 @@ fun PlaybackPageContent(
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 70.dp),
+                        .padding(bottom = 40.dp),
             )
             if (showSkipProgress) {
                 currentScene.item.duration?.let {
@@ -887,9 +891,9 @@ fun PlaybackPageContent(
         currentScene?.let {
             AnimatedVisibility(
                 controllerViewState.controlsVisible,
-                Modifier,
-                slideInVertically { it },
-                slideOutVertically { it },
+                Modifier.fillMaxSize(),
+                fadeIn(),
+                fadeOut(),
             ) {
                 PlaybackOverlay(
                     modifier =
@@ -967,6 +971,7 @@ fun PlaybackPageContent(
                         }
                     },
                     onSeekBarChange = seekBarState::onValueChange,
+                    onFullScreenClick = onFullScreenClick,
                     controllerViewState = controllerViewState,
                     showPlay = playPauseState.showPlay,
                     previousEnabled = previousState.isEnabled,

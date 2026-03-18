@@ -132,115 +132,112 @@ fun ItemDetails(
         }
 
     if (isNotTvDevice) {
-        androidx.compose.foundation.layout.Column(
-            modifier = modifier.fillMaxSize(),
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 135.dp),
+            modifier = modifier.fillMaxSize().padding(12.dp),
         ) {
             if (imageUrl.isNotNullOrBlank()) {
-                AsyncImage(
-                    modifier =
-                        Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth()
-                            .height(300.dp),
-                    model =
-                        ImageRequest
-                            .Builder(LocalContext.current)
-                            .data(imageUrl)
-                            .crossfade(false)
-                            .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                )
-            }
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 135.dp),
-                modifier = Modifier.padding(12.dp).fillMaxWidth(),
-            ) {
                 item {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier,
-                    ) {
-                        if (favorite != null && favoriteClick != null) {
-                            val color = if (favorite) Color.Red else Color.LightGray
+                    AsyncImage(
+                        modifier =
+                            Modifier
+                                .padding(bottom = 12.dp)
+                                .fillMaxWidth()
+                                .height(300.dp),
+                        model =
+                            ImageRequest
+                                .Builder(LocalContext.current)
+                                .data(imageUrl)
+                                .crossfade(false)
+                                .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                    )
+                }
+            }
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (favorite != null && favoriteClick != null) {
+                        val color = if (favorite) Color.Red else Color.LightGray
 
-                            ProvideTextStyle(MaterialTheme.typography.displayLarge.copy(color = color)) {
-                                Button(
-                                    onClick = favoriteClick,
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.fa_heart),
-                                        fontFamily = FontAwesome,
-                                    )
-                                }
+                        ProvideTextStyle(MaterialTheme.typography.displayLarge.copy(color = color)) {
+                            Button(
+                                onClick = favoriteClick,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.fa_heart),
+                                    fontFamily = FontAwesome,
+                                )
                             }
                         }
-                        if (uiConfig.readOnlyModeDisabled && editableTypes.isNotEmpty()) {
-                            EditButton(
-                                onClick = {
-                                    showDialog =
-                                        DialogParams(
-                                            false,
-                                            context.getString(R.string.stashapp_actions_edit),
-                                            buildEditList(context, editableTypes) {
-                                                searchForDataType = it
-                                            },
-                                        )
-                                },
-                            )
-                        }
                     }
-                }
-                if (rating100Click != null) {
-                    item {
-                        Rating100(
-                            rating100 = rating100 ?: 0,
-                            uiConfig = uiConfig,
-                            onRatingChange = rating100Click,
-                            enabled = uiConfig.readOnlyModeDisabled,
-                            modifier =
-                                Modifier
-                                    .height(ratingBarHeight)
-                                    .padding(start = 0.dp),
+                    if (uiConfig.readOnlyModeDisabled && editableTypes.isNotEmpty()) {
+                        EditButton(
+                            onClick = {
+                                showDialog =
+                                    DialogParams(
+                                        false,
+                                        context.getString(R.string.stashapp_actions_edit),
+                                        buildEditList(context, editableTypes) {
+                                            searchForDataType = it
+                                        },
+                                    )
+                            },
                         )
                     }
                 }
-                items(tableRows) { row ->
-                    TableRowComposable(row)
+            }
+            if (rating100Click != null) {
+                item {
+                    Rating100(
+                        rating100 = rating100 ?: 0,
+                        uiConfig = uiConfig,
+                        onRatingChange = rating100Click,
+                        enabled = uiConfig.readOnlyModeDisabled,
+                        modifier =
+                            Modifier
+                                .height(ratingBarHeight)
+                                .padding(start = 0.dp),
+                    )
                 }
+            }
+            items(tableRows) { row ->
+                TableRowComposable(row)
+            }
 
-                if (!tags.isNullOrEmpty()) {
-                    item {
-                        ItemsRow(
-                            title = titleCount(R.string.stashapp_tags, tags),
-                            items = tags,
-                            uiConfig = uiConfig,
-                            itemOnClick = itemOnClick,
-                            longClicker = removeLongClicker,
-                            modifier =
-                                Modifier
-                                    .padding(top = 12.dp)
-                                    .animateItem(),
-                        )
-                    }
+            if (!tags.isNullOrEmpty()) {
+                item {
+                    ItemsRow(
+                        title = titleCount(R.string.stashapp_tags, tags),
+                        items = tags,
+                        uiConfig = uiConfig,
+                        itemOnClick = itemOnClick,
+                        longClicker = removeLongClicker,
+                        modifier =
+                            Modifier
+                                .padding(top = 12.dp)
+                                .animateItem(),
+                    )
                 }
+            }
 
-                bodyContent?.invoke(this)
+            bodyContent?.invoke(this)
 
-                basicItemInfo?.let {
-                    item {
-                        ItemDetailsFooter(
-                            id = it.id,
-                            createdAt = it.createdAt?.toString(),
-                            updatedAt = it.updatedAt?.toString(),
-                            modifier =
-                                Modifier
-                                    .padding(top = 32.dp)
-                                    .fillMaxWidth(),
-                        )
-                    }
+            basicItemInfo?.let {
+                item {
+                    ItemDetailsFooter(
+                        id = it.id,
+                        createdAt = it.createdAt?.toString(),
+                        updatedAt = it.updatedAt?.toString(),
+                        modifier =
+                            Modifier
+                                .padding(top = 32.dp)
+                                .fillMaxWidth(),
+                    )
                 }
             }
         }
@@ -274,7 +271,6 @@ fun ItemDetails(
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier,
                     ) {
                         if (favorite != null && favoriteClick != null) {
                             val color = if (favorite) Color.Red else Color.LightGray
@@ -372,7 +368,7 @@ fun ItemDetails(
         show = searchForDataType != null,
         dataType = searchForDataType?.dataType ?: DataType.TAG,
         onItemClick = { item ->
-            onEdit?.invoke(EditItem(item.id, searchForDataType!!.dataType, AddRemove.ADD))
+            onEdit.invoke(EditItem(item.id, searchForDataType!!.dataType, AddRemove.ADD))
             searchForDataType = null
         },
         onDismissRequest = { searchForDataType = null },

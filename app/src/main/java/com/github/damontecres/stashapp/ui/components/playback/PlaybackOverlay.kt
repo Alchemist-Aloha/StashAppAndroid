@@ -152,6 +152,7 @@ fun PlaybackOverlay(
     seekPreviewEnabled: Boolean,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     onSeekBarChange: (Float) -> Unit,
+    onFullScreenClick: (() -> Unit)? = null,
     showDebugInfo: Boolean,
     moreButtonOptions: MoreButtonOptions,
     subtitleIndex: Int?,
@@ -254,10 +255,10 @@ fun PlaybackOverlay(
         }
         val controlHeight = .4f
         val listState = rememberLazyListState()
-        var height = 208.dp
-        if (!uiConfig.showTitleDuringPlayback || scene.title.isNullOrBlank()) height -= 24.dp
-        if (!uiConfig.showTitleDuringPlayback || scene.subtitle.isNullOrBlank()) height -= 24.dp
-        if (markers.isEmpty()) height -= 24.dp
+        var height = 160.dp
+        if (!uiConfig.showTitleDuringPlayback || scene.title.isNullOrBlank()) height -= 16.dp
+        if (!uiConfig.showTitleDuringPlayback || scene.subtitle.isNullOrBlank()) height -= 16.dp
+        if (markers.isEmpty()) height -= 16.dp
         LazyColumn(
             state = listState,
             modifier =
@@ -279,18 +280,18 @@ fun PlaybackOverlay(
                     ) {
                         val titleStyle =
                             if (isNotTvDevice) {
-                                MaterialTheme.typography.titleMedium
+                                MaterialTheme.typography.titleSmall
                             } else {
                                 MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 24.sp,
+                                    fontSize = 18.sp,
                                 )
                             }
                         val subtitleStyle =
                             if (isNotTvDevice) {
-                                MaterialTheme.typography.bodyMedium
+                                MaterialTheme.typography.bodySmall
                             } else {
                                 MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = 16.sp,
+                                    fontSize = 14.sp,
                                 )
                             }
                         if (scene.title.isNotNullOrBlank()) {
@@ -324,6 +325,7 @@ fun PlaybackOverlay(
                     onPlaybackActionClick = onPlaybackActionClick,
                     controllerViewState = controllerViewState,
                     showDebugInfo = showDebugInfo,
+                    onFullScreenClick = onFullScreenClick,
                     onSeekProgress = {
                         seekProgress = it
                         onSeekBarChange(it)
@@ -403,9 +405,9 @@ fun PlaybackOverlay(
                 seekProgress = playerControls.currentPosition.toFloat() / playerControls.duration
             }
             val yOffsetDp =
-                180.dp +
-                    (if (spriteData.isNotEmpty()) (160.dp) else 24.dp) +
-                    (if (markers.isEmpty()) (-24).dp else 0.dp)
+                130.dp +
+                    (if (spriteData.isNotEmpty()) (110.dp) else 16.dp) +
+                    (if (markers.isEmpty()) (-16).dp else 0.dp)
             val heightPx = with(LocalDensity.current) { yOffsetDp.toPx().toInt() }
             SeekPreviewImage(
                 modifier =
@@ -600,13 +602,13 @@ fun BasicMarkerCard(
         modifier =
             modifier
                 .padding(0.dp)
-                .width(DataType.MARKER.defaultCardWidth.dp / 2),
+                .width(100.dp),
         onClick = onClick,
         longClicker = { _, _ -> },
         getFilterAndPosition = null,
         uiConfig = uiConfig,
-        imageWidth = DataType.MARKER.defaultCardWidth.dp / 2,
-        imageHeight = DataType.MARKER.defaultCardHeight.dp / 2,
+        imageWidth = 100.dp,
+        imageHeight = 56.dp,
         imageUrl = marker.imageUrl,
         defaultImageDrawableRes = R.drawable.default_scene,
         videoUrl = null,

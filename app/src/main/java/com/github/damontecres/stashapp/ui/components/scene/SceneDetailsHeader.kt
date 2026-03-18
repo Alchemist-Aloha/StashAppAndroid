@@ -94,74 +94,58 @@ fun SceneDetailsHeader(
     val scope = rememberCoroutineScope()
     val isNotTvDevice = isNotTvDevice
 
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-//                .fillMaxHeight(.33f)
-                .height(if (isNotTvDevice) 300.dp else 460.dp)
-                .bringIntoViewRequester(bringIntoViewRequester),
-    ) {
-        if (scene.paths.screenshot.isNotNullOrBlank()) {
-            val gradientColor = MaterialTheme.colorScheme.background
-            AsyncImage(
-                model = scene.paths.screenshot,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopEnd,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .ifElse(
-                            isNotTvDevice,
-                            Modifier.clickable {
-                                playOnClick(
-                                    scene.resume_position ?: 0,
-                                    PlaybackMode.Choose,
+    if (isTvDevice) {
+        Box(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .height(460.dp)
+                    .bringIntoViewRequester(bringIntoViewRequester),
+        ) {
+            if (scene.paths.screenshot.isNotNullOrBlank()) {
+                val gradientColor = MaterialTheme.colorScheme.background
+                AsyncImage(
+                    model = scene.paths.screenshot,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.TopEnd,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .drawWithContent {
+                                drawContent()
+                                drawRect(
+                                    Brush.verticalGradient(
+                                        colors = listOf(Color.Transparent, gradientColor),
+                                        startY = 500f,
+                                    ),
+                                )
+                                drawRect(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(gradientColor, Color.Transparent),
+                                        endX = 400f,
+                                        startX = 100f,
+                                    ),
                                 )
                             },
-                        ).drawWithContent {
-                            drawContent()
-                            drawRect(
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, gradientColor),
-                                    startY = 500f,
-                                ),
-                            )
-                            drawRect(
-                                Brush.horizontalGradient(
-                                    colors = listOf(gradientColor, Color.Transparent),
-                                    endX = 400f,
-                                    startX = 100f,
-                                ),
-                            )
-//                            drawRect(
-//                                Brush.linearGradient(
-//                                    colors = listOf(gradientColor, Color.Transparent),
-//                                    start = Offset(x = 500f, y = 500f),
-//                                    end = Offset(x = 1000f, y = 0f),
-//                                ),
-//                            )
-                        },
-            )
-        }
-        Column(modifier = Modifier.ifElse(isTvDevice, Modifier.fillMaxWidth(0.8f))) {
-            if (isTvDevice) Spacer(modifier = Modifier.height(60.dp))
-            SceneDetailsHeaderInfo(
-                scene = scene,
-                studio = studio,
-                rating100 = rating100,
-                uiConfig = uiConfig,
-                itemOnClick = itemOnClick,
-                detailsOnClick = detailsOnClick,
-                onRatingChange = onRatingChange,
-                bringIntoViewRequester = bringIntoViewRequester,
-                removeLongClicker = removeLongClicker,
-                modifier = Modifier.padding(start = 16.dp),
-                showRatingBar = showRatingBar,
-            )
-            // Playback controls
-            if (isTvDevice) {
+                )
+            }
+            Column(modifier = Modifier.fillMaxWidth(0.8f)) {
+                Spacer(modifier = Modifier.height(60.dp))
+                SceneDetailsHeaderInfo(
+                    scene = scene,
+                    studio = studio,
+                    rating100 = rating100,
+                    uiConfig = uiConfig,
+                    itemOnClick = itemOnClick,
+                    detailsOnClick = detailsOnClick,
+                    onRatingChange = onRatingChange,
+                    bringIntoViewRequester = bringIntoViewRequester,
+                    removeLongClicker = removeLongClicker,
+                    modifier = Modifier.padding(start = 16.dp),
+                    showRatingBar = showRatingBar,
+                )
+                // Playback controls
                 PlayButtons(
                     resumePosition = scene.resume_position ?: 0,
                     oCount = oCount,
@@ -181,18 +165,33 @@ fun SceneDetailsHeader(
                     sfwMode = uiConfig.sfwMode,
                     modifier = Modifier.padding(vertical = 16.dp),
                 )
-            } else {
-                MobileActionRow(
-                    sfwMode = uiConfig.sfwMode,
-                    oCount = oCount,
-                    oCounterOnClick = oCounterOnClick,
-                    oCounterOnLongClick = oCounterOnLongClick,
-                    editOnClick = editOnClick,
-                    moreOnClick = moreOnClick,
-                    showEditButton = showEditButton,
-                    modifier = Modifier.padding(16.dp),
-                )
             }
+        }
+    } else {
+        Column(modifier = modifier.fillMaxWidth()) {
+            SceneDetailsHeaderInfo(
+                scene = scene,
+                studio = studio,
+                rating100 = rating100,
+                uiConfig = uiConfig,
+                itemOnClick = itemOnClick,
+                detailsOnClick = detailsOnClick,
+                onRatingChange = onRatingChange,
+                bringIntoViewRequester = bringIntoViewRequester,
+                removeLongClicker = removeLongClicker,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                showRatingBar = showRatingBar,
+            )
+            MobileActionRow(
+                sfwMode = uiConfig.sfwMode,
+                oCount = oCount,
+                oCounterOnClick = oCounterOnClick,
+                oCounterOnLongClick = oCounterOnLongClick,
+                editOnClick = editOnClick,
+                moreOnClick = moreOnClick,
+                showEditButton = showEditButton,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         }
     }
 }
@@ -348,48 +347,72 @@ fun SceneDetailsHeaderInfo(
                 }
             }
             // Key-Values
-            Row(
+            Column(
                 modifier =
                     Modifier
                         .padding(top = 8.dp, start = 16.dp)
                         .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (studio != null) {
-                    TitleValueText(
-                        stringResource(R.string.stashapp_studio),
-                        studio.name,
-                        playSoundOnFocus = uiConfig.playSoundOnFocus,
-                        modifier =
-                            Modifier.onFocusChanged {
-                                if (it.isFocused) {
-                                    scope.launch(StashCoroutineExceptionHandler()) { bringIntoViewRequester.bringIntoView() }
-                                }
+                // Row 1: Studio and Scene Code
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                ) {
+                    if (studio != null) {
+                        TitleValueText(
+                            stringResource(R.string.stashapp_studio),
+                            studio.name,
+                            playSoundOnFocus = uiConfig.playSoundOnFocus,
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            scope.launch(StashCoroutineExceptionHandler()) { bringIntoViewRequester.bringIntoView() }
+                                        }
+                                    },
+                            onClick = {
+                                itemOnClick.onClick(studio, null)
                             },
-                        onClick = {
-                            itemOnClick.onClick(studio, null)
-                        },
-                        onLongClick = {
-                            removeLongClicker.longClick(studio, null)
-                        },
-                    )
+                            onLongClick = {
+                                removeLongClicker.longClick(studio, null)
+                            },
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                    if (scene.code.isNotNullOrBlank()) {
+                        TitleValueText(
+                            stringResource(R.string.stashapp_scene_code),
+                            scene.code,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
-                if (scene.code.isNotNullOrBlank()) {
+                // Row 2: Director and Play Count
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                ) {
+                    if (scene.director.isNotNullOrBlank()) {
+                        TitleValueText(
+                            stringResource(R.string.stashapp_director),
+                            scene.director,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                     TitleValueText(
-                        stringResource(R.string.stashapp_scene_code),
-                        scene.code,
+                        stringResource(R.string.stashapp_play_count),
+                        (scene.play_count ?: 0).toString(),
+                        modifier = Modifier.weight(1f),
                     )
                 }
-                if (scene.director.isNotNullOrBlank()) {
-                    TitleValueText(
-                        stringResource(R.string.stashapp_director),
-                        scene.director,
-                    )
-                }
-                TitleValueText(
-                    stringResource(R.string.stashapp_play_count),
-                    (scene.play_count ?: 0).toString(),
-                )
+                // Row 3: Play Duration (separate or as needed)
                 TitleValueText(
                     stringResource(R.string.stashapp_play_duration),
                     durationToString(scene.play_duration ?: 0.0),
