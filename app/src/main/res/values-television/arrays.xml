@@ -1,0 +1,10 @@
+<resources>
+    <string name="card_size_default" translatable="false">5</string>
+    <string-array name="card_size_cols" translatable="false">
+        <item>7</item>
+        <item>6</item>
+        <item>5</item>
+        <item>4</item>
+        <item>3</item>
+    </string-array>
+</resources>

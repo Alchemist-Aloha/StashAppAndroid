@@ -172,6 +172,7 @@ class NavigationManagerCompose(
             -> navigate(destination)
 
             Destination.Main,
+            Destination.Search,
             is Destination.Filter,
             -> navigate(destination, true)
 

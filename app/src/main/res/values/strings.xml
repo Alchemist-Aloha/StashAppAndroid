@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name" translatable="false">StashAppAndroidTV</string>
+    <string name="app_name" translatable="false">StashAppAndroid</string>
     <string name="browse_title" translatable="false">Stash</string>
     <string name="play_scene" translatable="false">Play</string>
     <string name="pref_stash_server_header" translatable="false">Stash</string>
@@ -44,7 +44,7 @@
 
     <string name="setup_1_title">Server URL</string>
     <string name="setup_1_description">Configure the server URL</string>
-    <string name="app_name_long">Stash for Android TV</string>
+    <string name="app_name_long">Stash for Android</string>
     <string name="first_time_setup">First time setup</string>
     <string name="stash_server_url">Stash Server URL</string>
     <string name="stash_server_url_desc">Enter the URL for your Stash server, including the port if needed</string>
